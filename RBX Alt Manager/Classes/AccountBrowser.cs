@@ -53,8 +53,22 @@ namespace RBX_Alt_Manager.Classes
 
         public async Task TypeAsync(string selector, string text)
         {
-            string js = $@"(function(){{ var e=document.querySelector({Quote(selector)}); if(e){{ var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; s.call(e,{Quote(text)}); e.dispatchEvent(new Event('input',{{bubbles:true}})); e.dispatchEvent(new Event('change',{{bubbles:true}})); }} }})()";
-            await EvaluateExpressionAsync(js);
+            var rng = new Random();
+
+            await EvaluateExpressionAsync($"(function(){{ var e=document.querySelector({Quote(selector)}); if(e){{ e.focus(); var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; s.call(e,''); e.dispatchEvent(new Event('input',{{bubbles:true}})); }} }})()");
+
+            var sb = new System.Text.StringBuilder();
+            foreach (char ch in text ?? string.Empty)
+            {
+                sb.Append(ch);
+                string current = sb.ToString();
+
+                await EvaluateExpressionAsync($"(function(){{ var e=document.querySelector({Quote(selector)}); if(e){{ var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; s.call(e,{Quote(current)}); e.dispatchEvent(new Event('input',{{bubbles:true}})); e.dispatchEvent(new KeyboardEvent('keyup',{{bubbles:true}})); }} }})()");
+
+                await Task.Delay(rng.Next(60, 170));
+            }
+
+            await EvaluateExpressionAsync($"(function(){{ var e=document.querySelector({Quote(selector)}); if(e) e.dispatchEvent(new Event('change',{{bubbles:true}})); }})()");
         }
 
         public async Task ClickAsync(string selector)
@@ -111,18 +125,20 @@ namespace RBX_Alt_Manager.Classes
 
         public AccountBrowser(Account account, string Url = null, string Script = null, Func<BrowserPage, Task> PostNavigation = null)
         {
-            _ = LaunchBrowser(Url ?? string.Empty, Script: Script, PostNavigation: PostNavigation, Cookie: account.SecurityToken);
+            _ = LaunchBrowser(Url ?? string.Empty, Script: Script, PostNavigation: PostNavigation, Cookie: account.SecurityToken, ProfileKey: account.UserID.ToString());
         }
 
-        public async Task LaunchBrowser(string Url = "https://www.roblox.com/", Func<Task> PostPageCreation = null, Func<BrowserPage, Task> PostNavigation = null, string Script = null, string[] Arguments = null, string Cookie = null)
+        public async Task LaunchBrowser(string Url = "https://www.roblox.com/", Func<Task> PostPageCreation = null, Func<BrowserPage, Task> PostNavigation = null, string Script = null, string[] Arguments = null, string Cookie = null, string ProfileKey = null)
         {
             if (string.IsNullOrEmpty(Url)) Url = "https://www.roblox.com/";
 
             ComputePosition();
 
             string extraArgs = BuildBrowserArguments(Arguments);
+            string userDataFolder = ProfileFolderFor(ProfileKey);
+            string userAgent = DeriveUserAgent(ProfileKey);
 
-            var host = new WebView2Host((int)Size.X, (int)Size.Y, (int)Position.X, (int)Position.Y, extraArgs);
+            var host = new WebView2Host((int)Size.X, (int)Size.Y, (int)Position.X, (int)Position.Y, extraArgs, userDataFolder, userAgent);
             await host.InitializeAsync();
 
             var core = host.Core;
@@ -141,6 +157,8 @@ namespace RBX_Alt_Manager.Classes
 
             if (CaptureLogin)
             {
+                try { core.CookieManager.DeleteAllCookies(); } catch { }
+
                 bool added = false;
                 core.SourceChanged += async (s, e) =>
                 {
@@ -195,7 +213,8 @@ namespace RBX_Alt_Manager.Classes
         {
             CaptureLogin = true;
             CapturedPassword = Password ?? string.Empty;
-            await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, PostNavigation: async (page) => await LoginTask(page, Username, Password));
+            await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, ProfileKey: "_login",
+                PostNavigation: async (page) => await LoginTask(page, Username, Password));
         }
 
         public async Task LoginTask(BrowserPage page, string Username = "", string Password = "")
@@ -210,9 +229,44 @@ namespace RBX_Alt_Manager.Classes
                     await page.TypeAsync("#login-password", Password);
 
                 if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password))
+                {
+                    await Task.Delay(new Random().Next(400, 1100));
                     await page.ClickAsync("#login-button");
+                }
             }
             catch (Exception ex) { Program.Logger.Error($"An exception was caught while trying to automatically log in: {ex}"); }
+        }
+
+        private static string ProfileFolderFor(string key)
+        {
+            string baseDir = Path.Combine(Environment.CurrentDirectory, "WebView2Data");
+
+            if (string.IsNullOrWhiteSpace(key))
+                return Path.Combine(baseDir, "_default");
+
+            // isolate each account's cookies/cache/storage so Roblox sees separate browsers
+            string safe = new string(key.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+            return Path.Combine(baseDir, string.IsNullOrEmpty(safe) ? "_default" : safe);
+        }
+
+        // Realistic, recent Chrome/Edge UAs. A stable key maps to a stable UA so an
+        // account's fingerprint stays consistent across logins (a shifting UA is itself a flag).
+        private static readonly string[] UserAgentPool =
+        {
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        };
+
+        private static string DeriveUserAgent(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return null; // use WebView2's real default for the login window
+
+            int hash = 0;
+            foreach (char c in key) hash = unchecked(hash * 31 + c);
+            return UserAgentPool[Math.Abs(hash) % UserAgentPool.Length];
         }
 
         private void ComputePosition()

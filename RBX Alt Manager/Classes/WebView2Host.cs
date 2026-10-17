@@ -13,11 +13,15 @@ namespace RBX_Alt_Manager.Classes
         public CoreWebView2 Core => View?.CoreWebView2;
 
         private readonly string ExtraArgs;
+        private readonly string UserDataFolder;
+        private readonly string UserAgent;
         private TaskCompletionSource<bool> NavCompletion;
 
-        public WebView2Host(int width, int height, int x, int y, string extraArgs)
+        public WebView2Host(int width, int height, int x, int y, string extraArgs, string userDataFolder = null, string userAgent = null)
         {
             ExtraArgs = extraArgs ?? string.Empty;
+            UserDataFolder = userDataFolder;
+            UserAgent = userAgent;
 
             Text = "Roblox Account Manager";
             StartPosition = x >= 0 && y >= 0 ? FormStartPosition.Manual : FormStartPosition.CenterScreen;
@@ -30,7 +34,9 @@ namespace RBX_Alt_Manager.Classes
 
         public async Task InitializeAsync()
         {
-            string userData = Path.Combine(Environment.CurrentDirectory, "WebView2Data");
+            string userData = string.IsNullOrWhiteSpace(UserDataFolder)
+                ? Path.Combine(Environment.CurrentDirectory, "WebView2Data")
+                : UserDataFolder;
 
             CoreWebView2Environment env;
             try
@@ -44,6 +50,9 @@ namespace RBX_Alt_Manager.Classes
             }
 
             await View.EnsureCoreWebView2Async(env);
+
+            if (!string.IsNullOrEmpty(UserAgent))
+                try { View.CoreWebView2.Settings.UserAgent = UserAgent; } catch { }
 
             View.CoreWebView2.NavigationCompleted += (s, e) =>
             {
