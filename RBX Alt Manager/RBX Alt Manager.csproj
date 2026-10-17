@@ -33,7 +33,7 @@
     <PackageReference Include="RestSharp" Version="110.2.0" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
-    <PackageReference Include="libsodium-net" Version="0.10.0" />
+    <PackageReference Include="Sodium.Core" Version="1.3.5" />
     <PackageReference Include="Esendex.TokenBucket" Version="1.0.7" />
     <PackageReference Include="ObjectListView.Official" Version="2.9.1" />
     <PackageReference Include="Baseclass.Contrib.Nuget.Output" Version="2.1.0" ExcludeAssets="all" />
