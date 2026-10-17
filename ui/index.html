@@ -34,11 +34,20 @@
 
   <!-- Principal -->
   <div id="app">
+    <div id="update-bar" class="update-bar hidden">
+      <span id="update-text"></span>
+      <button id="update-go" class="primary">Actualizar ahora</button>
+      <button id="update-later">Más tarde</button>
+    </div>
     <header>
-      <div class="brand">RAM <span>by Nuulz</span></div>
+      <div class="brand">[R.A.M] <span>by Nuulz</span></div>
       <input id="search" placeholder="Buscar cuenta…">
       <div class="grow"></div>
+      <span id="multi" class="pill" title="Multi Roblox"></span>
       <span id="rbx-ver" class="muted"></span>
+      <button id="btn-servers">Servidores</button>
+      <button id="btn-games">Juegos</button>
+      <button id="btn-settings">Ajustes</button>
       <button id="btn-add" class="primary">+ Agregar cuenta</button>
     </header>
 
@@ -52,16 +61,21 @@
       </section>
 
       <aside class="side">
-        <h3>Unirse</h3>
-        <label>Place ID<input id="place-id" inputmode="numeric"></label>
-        <label>Job ID / enlace VIP<input id="job-id"></label>
-        <label class="row"><input type="checkbox" id="follow"> Seguir usuario (Place ID = User ID)</label>
-        <button id="btn-join" class="primary wide">Unirse con seleccionadas</button>
-        <button id="btn-cancel" class="wide hidden">Cancelar cola</button>
-        <div id="progress" class="muted"></div>
-
-        <h3>Detalles</h3>
-        <div id="details" class="muted">Selecciona una cuenta.</div>
+        <div class="box">
+          <h3>Unirse</h3>
+          <div class="box-body">
+            <label>Place ID<input id="place-id" inputmode="numeric"></label>
+            <label>Job ID / enlace VIP<input id="job-id"></label>
+            <label class="row"><input type="checkbox" id="follow"> Seguir usuario (Place ID = User ID)</label>
+            <button id="btn-join" class="primary wide">Unirse con seleccionadas</button>
+            <button id="btn-cancel" class="wide hidden">Cancelar cola</button>
+            <div id="progress" class="muted"></div>
+          </div>
+        </div>
+        <div class="box">
+          <h3>Detalles</h3>
+          <div id="details" class="box-body muted">Selecciona una cuenta.</div>
+        </div>
       </aside>
     </main>
   </div>
@@ -77,8 +91,68 @@
     </div>
   </div>
 
+  <!-- Servidores -->
+  <div id="dlg-servers" class="overlay hidden">
+    <div class="card big">
+      <div class="dlg-head"><h2>Servidores</h2><button class="close" data-close="dlg-servers">✕</button></div>
+      <div class="row-inputs">
+        <input id="srv-place" placeholder="Place ID" inputmode="numeric">
+        <button id="srv-load" class="primary">Cargar</button>
+        <button id="srv-more" class="hidden">Más</button>
+      </div>
+      <div class="scroll">
+        <table><thead><tr><th>Jugadores</th><th>Ping</th><th>FPS</th><th>Job ID</th><th></th></tr></thead><tbody id="srv-rows"></tbody></table>
+      </div>
+      <p id="srv-msg" class="muted"></p>
+    </div>
+  </div>
+
+  <!-- Juegos -->
+  <div id="dlg-games" class="overlay hidden">
+    <div class="card big">
+      <div class="dlg-head"><h2>Juegos</h2><button class="close" data-close="dlg-games">✕</button></div>
+      <div class="tabs"><button data-tab="favorites" class="tab on">Favoritos</button><button data-tab="recent" class="tab">Recientes</button><div class="grow"></div><button id="games-clear" class="hidden">Limpiar recientes</button></div>
+      <div id="games-list" class="games scroll"></div>
+    </div>
+  </div>
+
+  <!-- Ajustes -->
+  <div id="dlg-settings" class="overlay hidden">
+    <div class="card big">
+      <div class="dlg-head"><h2>Ajustes</h2><button class="close" data-close="dlg-settings">✕</button></div>
+      <div class="scroll settings">
+        <h3>Roblox</h3>
+        <label class="row"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox (varias instancias a la vez)</label>
+        <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773)</label>
+        <label class="row"><input type="checkbox" data-k="autoCloseLastProcess"> Cerrar el Roblox anterior de la cuenta al lanzar</label>
+        <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS</label>
+        <label>FPS máximos<input type="number" data-k="maxFps" min="30"></label>
+        <h3>Lanzamiento</h3>
+        <label>Retraso entre cuentas (s)<input type="number" data-k="accountJoinDelay" min="0"></label>
+        <label class="row"><input type="checkbox" data-k="asyncJoin"> Esperar a que se abra cada Roblox en vez de usar el retraso</label>
+        <label class="row"><input type="checkbox" data-k="shuffleJobId"> Elegir servidor aleatorio si no hay Job ID</label>
+        <label class="row"><input type="checkbox" data-k="shuffleLowestServer"> Preferir el servidor más vacío</label>
+        <label class="row"><input type="checkbox" data-k="isTeleport"> Unirse como teletransporte</label>
+        <h3>Cuentas</h3>
+        <label class="row"><input type="checkbox" data-k="savePasswords"> Guardar contraseñas</label>
+        <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado (en línea / en juego)</label>
+        <label>Actualizar estado cada (min)<input type="number" data-k="presenceUpdateMinutes" min="1"></label>
+        <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar</label>
+        <label>Anti-AFK: mínimo (min)<input type="number" data-k="antiAfkMinMinutes" min="1"></label>
+        <label>Anti-AFK: máximo (min)<input type="number" data-k="antiAfkMaxMinutes" min="1"></label>
+        <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
+        <h3>App</h3>
+        <label class="row"><input type="checkbox" data-k="checkForUpdates"> Buscar actualizaciones al iniciar</label>
+        <div class="row-inputs"><button id="btn-check-update">Buscar actualización</button><span id="app-ver" class="muted"></span></div>
+      </div>
+      <p id="set-err" class="err"></p>
+      <div class="actions"><button data-close="dlg-settings">Cancelar</button><button id="set-save" class="primary">Guardar</button></div>
+    </div>
+  </div>
+
   <ul id="ctx" class="ctx hidden">
     <li data-act="edit">Editar alias / grupo…</li>
+    <li data-act="save-game">Guardar Place/Job actual para esta cuenta</li>
     <li data-act="afk">Activar/desactivar anti-AFK</li>
     <li data-act="remove" class="danger">Eliminar</li>
   </ul>

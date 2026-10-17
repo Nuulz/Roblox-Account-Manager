@@ -185,6 +185,10 @@ pub fn set_multi_roblox(enabled: bool) -> bool {
     true
 }
 
+pub fn multi_active() -> bool {
+    MULTI_MUTEX.lock().unwrap().is_some()
+}
+
 // ------------------------------------------------------- arreglo del error 773
 
 static COOKIE_LOCK: Lazy<Mutex<Option<std::fs::File>>> = Lazy::new(|| Mutex::new(None));

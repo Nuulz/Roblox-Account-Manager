@@ -169,6 +169,13 @@ $('ctx').addEventListener('click', async (e) => {
     if (act === 'remove') {
       for (const id of ids) await invoke('account_remove', { userId: id });
       selected.clear();
+    } else if (act === 'save-game') {
+      const placeId = $('place-id').value.trim();
+      for (const id of ids) {
+        const a = accounts.find((x) => x.userId === id);
+        await invoke('account_update', { view: { userId: id, fields: { ...a.fields, SavedPlaceId: placeId, SavedJobId: $('job-id').value.trim() } } });
+      }
+      toast('success', 'Place/Job guardado en la cuenta');
     } else if (act === 'afk') {
       for (const id of ids) {
         const a = accounts.find((x) => x.userId === id);
@@ -227,13 +234,159 @@ listen('launch-progress', (e) => {
 });
 listen('vip-privacy', (e) => toast('info', `${e.payload.username}: la privacidad de servidores privados no está en "Todos"`));
 
+// ───────────────────────── diálogos
+
+const open = (id) => $(id).classList.remove('hidden');
+const close = (id) => $(id).classList.add('hidden');
+document.addEventListener('click', (e) => { const c = e.target.dataset?.close; if (c) close(c); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.overlay:not(#vault)').forEach((o) => o.classList.add('hidden'));
+});
+
+function usePlace(placeId, jobId = '') {
+  $('place-id').value = placeId;
+  $('job-id').value = jobId;
+}
+
+// servidores
+let srvCursor = null;
+async function loadServers(more) {
+  const placeId = Number($('srv-place').value.trim());
+  if (!placeId) return;
+  if (!more) { $('srv-rows').innerHTML = ''; srvCursor = null; }
+  $('srv-msg').textContent = 'Cargando…';
+  try {
+    const page = await invoke('servers_list', { placeId, cursor: srvCursor ?? '' });
+    srvCursor = page.nextCursor;
+    $('srv-more').classList.toggle('hidden', !srvCursor);
+    $('srv-rows').insertAdjacentHTML('beforeend', page.data.map((s) => `
+      <tr><td>${s.playing}/${s.maxPlayers}</td><td>${s.ping}</td><td>${Math.round(s.fps)}</td>
+      <td class="mono">${esc(s.id)}</td><td><button data-job="${esc(s.id)}">Usar</button></td></tr>`).join(''));
+    $('srv-msg').textContent = `${$('srv-rows').children.length} servidores`;
+  } catch (e) { $('srv-msg').textContent = e; }
+}
+$('btn-servers').onclick = () => { open('dlg-servers'); $('srv-place').value ||= $('place-id').value; $('srv-place').focus(); };
+$('srv-load').onclick = () => loadServers(false);
+$('srv-more').onclick = () => loadServers(true);
+$('srv-place').onkeydown = (e) => e.key === 'Enter' && loadServers(false);
+$('srv-rows').addEventListener('click', (e) => {
+  const job = e.target.dataset.job;
+  if (!job) return;
+  usePlace($('srv-place').value.trim(), job);
+  close('dlg-servers');
+  toast('info', 'Servidor elegido. Pulsa "Unirse con seleccionadas".');
+});
+
+// juegos
+let games = { recent: [], favorites: [] };
+let gamesTab = 'favorites';
+function renderGames() {
+  const list = games[gamesTab];
+  const favIds = new Set(games.favorites.map((g) => g.placeId));
+  $('games-clear').classList.toggle('hidden', gamesTab !== 'recent' || !list.length);
+  $('games-list').innerHTML = list.length ? list.map((g) => `
+    <div class="game" data-place="${g.placeId}" data-ps="${esc(g.privateServer)}">
+      ${g.icon ? `<img src="${esc(g.icon)}" alt="">` : '<img alt="">'}
+      <button class="star" data-fav="${g.placeId}" title="Favorito">${favIds.has(g.placeId) ? '★' : '☆'}</button>
+      <div class="t" title="${esc(g.name)}">${esc(g.name)}</div>
+    </div>`).join('') : `<p class="muted">${gamesTab === 'recent' ? 'Aún no hay juegos recientes.' : 'Marca juegos con ☆ en Recientes.'}</p>`;
+}
+$('btn-games').onclick = async () => { games = await invoke('games_list'); renderGames(); open('dlg-games'); };
+document.querySelectorAll('.tab').forEach((t) => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+  gamesTab = t.dataset.tab; renderGames();
+});
+$('games-clear').onclick = () => invoke('game_clear_recent');
+$('games-list').addEventListener('click', async (e) => {
+  const fav = e.target.dataset.fav;
+  if (fav) {
+    e.stopPropagation();
+    const id = Number(fav);
+    if (games.favorites.some((g) => g.placeId === id)) await invoke('game_remove_favorite', { placeId: id });
+    else await invoke('game_add_favorite', { entry: games.recent.find((g) => g.placeId === id) });
+    return;
+  }
+  const card = e.target.closest('.game');
+  if (!card) return;
+  usePlace(card.dataset.place, card.dataset.ps);
+  close('dlg-games');
+});
+listen('games', (e) => { games = e.payload; renderGames(); });
+
+// ajustes
+let settings = null;
+async function openSettings() {
+  settings = await invoke('settings_get');
+  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w]').forEach((el) => {
+    const v = el.dataset.k ? settings.general[el.dataset.k] : settings.watcher[el.dataset.w];
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  });
+  $('set-err').textContent = '';
+  $('app-ver').textContent = `Versión ${await invoke('app_version')}`;
+  open('dlg-settings');
+}
+$('btn-settings').onclick = openSettings;
+$('set-save').onclick = async () => {
+  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w]').forEach((el) => {
+    const v = el.type === 'checkbox' ? el.checked : Number(el.value);
+    if (el.dataset.k) settings.general[el.dataset.k] = v; else settings.watcher[el.dataset.w] = v;
+  });
+  try {
+    await invoke('settings_set', { s: settings });
+    close('dlg-settings');
+    toast('success', 'Ajustes guardados');
+  } catch (e) { $('set-err').textContent = e; }
+  showMulti();
+};
+
+async function showMulti() {
+  const s = await invoke('settings_get');
+  const want = s.general.enableMultiRoblox;
+  const active = await invoke('multi_roblox_status');
+  const el = $('multi');
+  el.textContent = !want ? 'Multi Roblox: off' : active ? 'Multi Roblox: activo' : 'Multi Roblox: bloqueado';
+  el.className = `pill ${!want ? '' : active ? 'on' : 'login'}`;
+  el.title = want && !active ? 'Otro programa o Roblox ya tiene el control. Cierra Roblox y haz clic aquí para reintentar.' : 'Multi Roblox';
+  el.style.cursor = want && !active ? 'pointer' : '';
+}
+$('multi').onclick = async () => {
+  try { await invoke('multi_roblox_apply'); toast('success', 'Multi Roblox activado'); }
+  catch (e) { toast('error', e); }
+  showMulti();
+};
+
+// actualizaciones
+let updateUrl = '';
+async function checkUpdate(manual) {
+  try {
+    const u = await invoke('update_check');
+    if (u.available) {
+      updateUrl = u.url;
+      $('update-text').textContent = `Hay una nueva versión: ${u.latest} (tienes ${u.current})`;
+      $('update-bar').classList.remove('hidden');
+      close('dlg-settings');
+    } else if (manual) toast('info', `Ya tienes la última versión (${u.current})`);
+  } catch (e) { if (manual) toast('error', `No se pudo buscar actualizaciones: ${e}`); }
+}
+$('btn-check-update').onclick = () => checkUpdate(true);
+$('update-later').onclick = () => $('update-bar').classList.add('hidden');
+$('update-go').onclick = async () => {
+  $('update-go').disabled = true;
+  $('update-text').textContent = 'Descargando actualización…';
+  try { await invoke('update_install', { url: updateUrl }); }
+  catch (e) { toast('error', e); $('update-go').disabled = false; }
+};
+
 async function loadMain() {
   accounts = await invoke('accounts_list');
   render();
   const ver = await invoke('roblox_version');
-  $('rbx-ver').textContent = ver ? `Roblox ${ver}` : 'Roblox no encontrado';
+  $('rbx-ver').textContent = ver ? `Roblox ${ver.replace(/^version-/, '').slice(0, 8)}` : 'Roblox no encontrado';
   invoke('accounts_refresh_avatars', { ids: accounts.map((a) => a.userId) });
   invoke('accounts_update_presence', { ids: accounts.map((a) => a.userId) });
+  showMulti();
+  const s = await invoke('settings_get');
+  if (s.general.checkForUpdates) checkUpdate(false);
 }
 
 invoke('vault_startup').then(showVault).catch((e) => toast('error', e));

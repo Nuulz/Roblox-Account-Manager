@@ -1,5 +1,3 @@
-use tauri::Manager;
-
 mod account;
 mod clientsettings;
 mod crypto;
@@ -10,6 +8,7 @@ mod roblox;
 mod settings;
 mod state;
 mod storage;
+mod updater;
 mod util;
 
 use ops::{CmdResult, JoinRequest};
@@ -176,10 +175,51 @@ fn settings_get() -> settings::Settings {
 }
 
 #[tauri::command]
-fn settings_set(s: settings::Settings) {
+fn settings_set(s: settings::Settings) -> CmdResult<()> {
     s.save();
     *st().settings.write() = s.clone();
     st().emit("settings", s);
+    apply_process_settings()
+}
+
+/// Aplica multi Roblox y el bloqueo de cookies según la configuración actual.
+fn apply_process_settings() -> CmdResult<()> {
+    let (multi, lock) = {
+        let g = &st().settings.read().general;
+        (g.enable_multi_roblox, g.lock_roblox_cookies)
+    };
+    process::set_cookie_lock(multi && lock);
+    if !process::set_multi_roblox(multi) {
+        return Err("No se pudo activar multi Roblox: cierra todas las ventanas de Roblox y vuelve a intentarlo".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn multi_roblox_status() -> bool {
+    process::multi_active()
+}
+
+#[tauri::command]
+fn multi_roblox_apply() -> CmdResult<()> {
+    apply_process_settings()
+}
+
+// ─────────────────────────────────── actualizaciones
+
+#[tauri::command]
+async fn update_check() -> CmdResult<updater::UpdateInfo> {
+    updater::check().await
+}
+
+#[tauri::command]
+async fn update_install(url: String) -> CmdResult<()> {
+    updater::install(&url).await
+}
+
+#[tauri::command]
+fn app_version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
 }
 
 // ─────────────────────────────────── almacenamiento
@@ -230,11 +270,26 @@ fn app_uptime_secs() -> u64 {
 
 // ─────────────────────────────────── setup de la app
 
+fn init_log() {
+    use simplelog::{Config, LevelFilter, WriteLogger};
+    let path = util::data_path("ram.log");
+    // Evita que el log crezca sin límite
+    if std::fs::metadata(&path).map(|m| m.len() > 2_000_000).unwrap_or(false) {
+        let _ = std::fs::remove_file(&path);
+    }
+    if let Ok(f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = WriteLogger::init(LevelFilter::Info, Config::default(), f);
+    }
+    log::info!("Roblox Account Manager {} iniciado", env!("CARGO_PKG_VERSION"));
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             st().app.set(app.handle().clone()).ok();
+            init_log();
+            updater::cleanup();
 
             // Cargar configuración
             *st().settings.write() = settings::Settings::load();
@@ -245,6 +300,10 @@ pub fn run() {
                 .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
             {
                 *st().roblox_version.write() = Some(ver);
+            }
+
+            if let Err(e) = apply_process_settings() {
+                log::warn!("{e}");
             }
 
             // Tareas de fondo
@@ -286,6 +345,12 @@ pub fn run() {
             // configuración
             settings_get,
             settings_set,
+            multi_roblox_apply,
+            multi_roblox_status,
+            // actualizaciones
+            update_check,
+            update_install,
+            app_version,
             // almacenamiento
             storage_export,
             storage_import,
