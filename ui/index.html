@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Roblox Account Manager</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Bóveda -->
+  <div id="vault" class="overlay hidden">
+    <div class="card">
+      <h1>Roblox Account Manager</h1>
+      <div id="vault-locked" class="hidden">
+        <p>Escribe tu contraseña maestra.</p>
+        <input id="vault-pass" type="password" placeholder="Contraseña">
+        <button id="vault-unlock" class="primary">Desbloquear</button>
+      </div>
+      <div id="vault-legacy" class="hidden">
+        <p>Se encontró un archivo de la versión anterior protegido con contraseña.</p>
+        <input id="legacy-pass" type="password" placeholder="Contraseña anterior">
+        <button id="legacy-unlock" class="primary">Migrar</button>
+      </div>
+      <div id="vault-setup" class="hidden">
+        <p id="setup-msg">Elige cómo proteger tus cuentas.</p>
+        <label class="opt"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI)</label>
+        <label class="opt"><input type="radio" name="mode" value="password"> Contraseña maestra</label>
+        <label class="opt"><input type="radio" name="mode" value="plain"> Sin cifrar</label>
+        <input id="setup-pass" type="password" placeholder="Contraseña maestra" class="hidden">
+        <button id="setup-ok" class="primary">Continuar</button>
+      </div>
+      <p id="vault-err" class="err"></p>
+    </div>
+  </div>
+
+  <!-- Principal -->
+  <div id="app">
+    <header>
+      <div class="brand">RAM <span>by Nuulz</span></div>
+      <input id="search" placeholder="Buscar cuenta…">
+      <div class="grow"></div>
+      <span id="rbx-ver" class="muted"></span>
+      <button id="btn-add" class="primary">+ Agregar cuenta</button>
+    </header>
+
+    <main>
+      <section class="list">
+        <table>
+          <thead><tr><th class="chk"><input type="checkbox" id="sel-all"></th><th>Cuenta</th><th>Grupo</th><th>Estado</th><th>Último uso</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="empty" class="empty hidden">No hay cuentas. Agrega una con su cookie.</div>
+      </section>
+
+      <aside class="side">
+        <h3>Unirse</h3>
+        <label>Place ID<input id="place-id" inputmode="numeric"></label>
+        <label>Job ID / enlace VIP<input id="job-id"></label>
+        <label class="row"><input type="checkbox" id="follow"> Seguir usuario (Place ID = User ID)</label>
+        <button id="btn-join" class="primary wide">Unirse con seleccionadas</button>
+        <button id="btn-cancel" class="wide hidden">Cancelar cola</button>
+        <div id="progress" class="muted"></div>
+
+        <h3>Detalles</h3>
+        <div id="details" class="muted">Selecciona una cuenta.</div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Agregar cuenta -->
+  <div id="dlg-add" class="overlay hidden">
+    <div class="card">
+      <h2>Agregar cuenta</h2>
+      <label>Cookie .ROBLOSECURITY<textarea id="add-cookie" rows="4"></textarea></label>
+      <label>Contraseña (opcional)<input id="add-pass" type="password"></label>
+      <p id="add-err" class="err"></p>
+      <div class="actions"><button id="add-cancel">Cancelar</button><button id="add-ok" class="primary">Agregar</button></div>
+    </div>
+  </div>
+
+  <ul id="ctx" class="ctx hidden">
+    <li data-act="edit">Editar alias / grupo…</li>
+    <li data-act="afk">Activar/desactivar anti-AFK</li>
+    <li data-act="remove" class="danger">Eliminar</li>
+  </ul>
+
+  <div id="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>
