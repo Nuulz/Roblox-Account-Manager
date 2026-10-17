@@ -1,1 +1,303 @@
+use tauri::Manager;
 
+mod account;
+mod clientsettings;
+mod crypto;
+mod games;
+mod ops;
+mod process;
+mod roblox;
+mod settings;
+mod state;
+mod storage;
+mod util;
+
+use ops::{CmdResult, JoinRequest};
+use state::st;
+
+// ─────────────────────────────────── vault
+
+#[tauri::command]
+fn vault_startup() -> storage::VaultInfo {
+    storage::startup()
+}
+
+#[tauri::command]
+fn vault_unlock(password: String) -> CmdResult<storage::VaultInfo> {
+    storage::unlock(&password)
+}
+
+#[tauri::command]
+fn vault_unlock_legacy(password: String) -> CmdResult<storage::VaultInfo> {
+    storage::unlock_legacy(&password)
+}
+
+#[tauri::command]
+fn vault_configure(mode: crypto::VaultMode, password: Option<String>) -> CmdResult<storage::VaultInfo> {
+    storage::configure(mode, password.as_deref())
+}
+
+#[tauri::command]
+fn vault_verify_password(password: String) -> bool {
+    storage::verify_password(&password)
+}
+
+// ─────────────────────────────────── cuentas
+
+#[tauri::command]
+fn accounts_list() -> Vec<account::AccountView> {
+    st().account_views()
+}
+
+#[tauri::command]
+async fn account_add(cookie: String, password: String) -> CmdResult<account::AccountView> {
+    ops::add_account(&cookie, &password).await
+}
+
+#[tauri::command]
+fn account_remove(user_id: i64) {
+    st().accounts.write().retain(|a| a.user_id != user_id);
+    storage::save();
+    st().emit_accounts();
+}
+
+#[tauri::command]
+fn account_update(view: account::AccountPatch) -> CmdResult<()> {
+    st().with_account(view.user_id, |a| view.apply(a)).ok_or("Cuenta no encontrada")?;
+    storage::save();
+    st().emit_accounts();
+    Ok(())
+}
+
+#[tauri::command]
+async fn accounts_refresh_avatars(ids: Vec<i64>) {
+    ops::refresh_avatars(ids).await;
+}
+
+#[tauri::command]
+async fn accounts_update_presence(ids: Vec<i64>) {
+    ops::update_presence(ids).await;
+}
+
+// ─────────────────────────────────── lanzar
+
+#[tauri::command]
+async fn join_server(
+    user_id: i64,
+    place_id: i64,
+    job_id: String,
+    follow_user: bool,
+    join_vip: bool,
+) -> CmdResult<()> {
+    ops::join_server(user_id, JoinRequest { place_id, job_id, follow_user, join_vip }).await
+}
+
+#[tauri::command]
+async fn launch_many(
+    ids: Vec<i64>,
+    place_id: i64,
+    job_id: String,
+    follow_user: bool,
+    join_vip: bool,
+) {
+    ops::launch_many(ids, JoinRequest { place_id, job_id, follow_user, join_vip }).await;
+}
+
+#[tauri::command]
+fn launch_cancel() {
+    st().cancel_launching();
+}
+
+#[tauri::command]
+fn launch_next() {
+    ops::next_account();
+}
+
+// ─────────────────────────────────── servidores
+
+#[tauri::command]
+async fn servers_list(place_id: i64, cursor: String) -> CmdResult<roblox::ServersPage> {
+    roblox::api()
+        .servers(place_id, if cursor.is_empty() { None } else { Some(cursor.as_str()) })
+        .await
+        .map_err(ops::err)
+}
+
+#[tauri::command]
+async fn server_region(ip: String) -> String {
+    let fmt = st().settings.read().general.server_region_format.clone();
+    let api_url = st().settings.read().general.ip_api_link.clone();
+    roblox::api().region_for_ip(&ip, &api_url, &fmt).await.unwrap_or_default()
+}
+
+// ─────────────────────────────────── juegos
+
+#[tauri::command]
+fn games_list() -> games::GamesData {
+    st().games.read().clone()
+}
+
+#[tauri::command]
+fn game_add_favorite(entry: games::GameEntry) {
+    let mut g = st().games.write();
+    if !g.favorites.iter().any(|e| e.place_id == entry.place_id) {
+        g.favorites.push(entry);
+        g.save();
+    }
+    st().emit("games", g.clone());
+}
+
+#[tauri::command]
+fn game_remove_favorite(place_id: i64) {
+    let mut g = st().games.write();
+    g.favorites.retain(|e| e.place_id != place_id);
+    g.save();
+    st().emit("games", g.clone());
+}
+
+#[tauri::command]
+fn game_clear_recent() {
+    let mut g = st().games.write();
+    g.recent.clear();
+    g.save();
+    st().emit("games", g.clone());
+}
+
+#[tauri::command]
+async fn game_info(place_id: i64) -> CmdResult<roblox::PlaceInfo> {
+    roblox::api().place_info(place_id).await.map_err(ops::err)
+}
+
+// ─────────────────────────────────── configuración
+
+#[tauri::command]
+fn settings_get() -> settings::Settings {
+    st().settings.read().clone()
+}
+
+#[tauri::command]
+fn settings_set(s: settings::Settings) {
+    s.save();
+    *st().settings.write() = s.clone();
+    st().emit("settings", s);
+}
+
+// ─────────────────────────────────── almacenamiento
+
+#[tauri::command]
+fn storage_export(path: String) -> CmdResult<usize> {
+    storage::export_plain(std::path::Path::new(&path))
+}
+
+#[tauri::command]
+fn storage_import(path: String, password: Option<String>) -> CmdResult<usize> {
+    storage::import_file(std::path::Path::new(&path), password.as_deref())
+}
+
+// ─────────────────────────────────── procesos / ventanas
+
+#[tauri::command]
+fn processes_list() -> Vec<process::RbxProcess> {
+    process::roblox_processes()
+}
+
+#[tauri::command]
+fn process_kill(pid: u32) {
+    process::kill(pid);
+}
+
+#[tauri::command]
+fn window_close(hwnd: isize) {
+    process::close_window(hwnd);
+}
+
+#[tauri::command]
+fn window_move(hwnd: isize, x: i32, y: i32, w: i32, h: i32) {
+    process::move_window(hwnd, x, y, w, h);
+}
+
+// ─────────────────────────────────── utilidades
+
+#[tauri::command]
+fn roblox_version() -> Option<String> {
+    st().roblox_version.read().clone()
+}
+
+#[tauri::command]
+fn app_uptime_secs() -> u64 {
+    st().started.elapsed().as_secs()
+}
+
+// ─────────────────────────────────── setup de la app
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .setup(|app| {
+            st().app.set(app.handle().clone()).ok();
+
+            // Cargar configuración
+            *st().settings.write() = settings::Settings::load();
+            // Cargar juegos
+            *st().games.write() = games::GamesData::load();
+            // Detectar versión de Roblox
+            if let Some(ver) = clientsettings::roblox_version_folder()
+                .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+            {
+                *st().roblox_version.write() = Some(ver);
+            }
+
+            // Tareas de fondo
+            tauri::async_runtime::spawn(ops::presence_loop());
+            tauri::async_runtime::spawn(ops::session_loop());
+            tauri::async_runtime::spawn(ops::cookie_refresh_loop());
+            tauri::async_runtime::spawn(ops::anti_afk_loop());
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            // vault
+            vault_startup,
+            vault_unlock,
+            vault_unlock_legacy,
+            vault_configure,
+            vault_verify_password,
+            // cuentas
+            accounts_list,
+            account_add,
+            account_remove,
+            account_update,
+            accounts_refresh_avatars,
+            accounts_update_presence,
+            // lanzar
+            join_server,
+            launch_many,
+            launch_cancel,
+            launch_next,
+            // servidores
+            servers_list,
+            server_region,
+            // juegos
+            games_list,
+            game_add_favorite,
+            game_remove_favorite,
+            game_clear_recent,
+            game_info,
+            // configuración
+            settings_get,
+            settings_set,
+            // almacenamiento
+            storage_export,
+            storage_import,
+            // procesos
+            processes_list,
+            process_kill,
+            window_close,
+            window_move,
+            // utilidades
+            roblox_version,
+            app_uptime_secs,
+        ])
+        .run(tauri::generate_context!())
+        .expect("No se pudo iniciar la aplicación");
+}

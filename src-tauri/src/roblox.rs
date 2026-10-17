@@ -83,6 +83,20 @@ pub struct ServersPage {
     pub next_cursor: Option<String>,
 }
 
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaceInfo {
+    pub place_id: i64,
+    pub name: String,
+    pub description: String,
+    pub icon: String,
+    pub universe_id: i64,
+    pub max_players: i64,
+    pub visits: i64,
+    pub created: String,
+    pub updated: String,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthUser {
@@ -888,5 +902,46 @@ impl Api {
             }
         }
         out
+    }
+
+    /// Wrapper público con firma simple para los comandos Tauri.
+    pub async fn servers(&self, place_id: i64, cursor: Option<&str>) -> Result<ServersPage> {
+        let cookie = crate::state::st().any_cookie();
+        self.servers_page(place_id, cursor, false, cookie.as_deref()).await
+    }
+
+    /// Información pública de un lugar (nombre, descripción, icono, etc.).
+    pub async fn place_info(&self, place_id: i64) -> Result<PlaceInfo> {
+        let universe_id = self.universe_of_place(place_id).await?;
+        let url = format!("https://games.roblox.com/v1/games?universeIds={universe_id}");
+        let v: Value = self.req(Method::GET, &url, None).send().await?.json().await?;
+        let g = v["data"].as_array().and_then(|a| a.first()).cloned().unwrap_or(Value::Null);
+        let icon = self.place_icons(&[place_id]).await;
+        Ok(PlaceInfo {
+            place_id,
+            name: g["name"].as_str().unwrap_or_default().to_string(),
+            description: g["description"].as_str().unwrap_or_default().to_string(),
+            icon: icon.get(&place_id).cloned().unwrap_or_default(),
+            universe_id,
+            max_players: g["maxPlayers"].as_i64().unwrap_or(0),
+            visits: g["visits"].as_i64().unwrap_or(0),
+            created: g["created"].as_str().unwrap_or_default().to_string(),
+            updated: g["updated"].as_str().unwrap_or_default().to_string(),
+        })
+    }
+
+    /// Consulta ip-api.com (u otro endpoint configurado) para obtener la región de un IP.
+    pub async fn region_for_ip(&self, ip: &str, api_url: &str, fmt: &str) -> Option<String> {
+        let url = api_url.replace("<ip>", ip);
+        let v: Value = self.req(Method::GET, &url, None).send().await.ok()?.json().await.ok()?;
+        Some(
+            fmt.replace("<city>", v["city"].as_str().unwrap_or(""))
+                .replace("<country>", v["country"].as_str().unwrap_or(""))
+                .replace("<countryCode>", v["countryCode"].as_str().unwrap_or(""))
+                .replace("<regionName>", v["regionName"].as_str().unwrap_or(""))
+                .replace("<region>", v["region"].as_str().unwrap_or(""))
+                .trim_matches([',', ' '].as_ref())
+                .to_string(),
+        )
     }
 }

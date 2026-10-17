@@ -134,6 +134,36 @@ pub struct AccountView {
     pub age_days: i64,
 }
 
+/// Campos editables que el frontend puede enviar para actualizar una cuenta.
+#[derive(Debug, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AccountPatch {
+    pub user_id: i64,
+    pub alias: Option<String>,
+    pub description: Option<String>,
+    pub group: Option<String>,
+    pub password: Option<String>,
+    pub anti_afk: Option<bool>,
+    pub fields: Option<BTreeMap<String, String>>,
+}
+
+impl Default for AccountPatch {
+    fn default() -> Self {
+        Self { user_id: 0, alias: None, description: None, group: None, password: None, anti_afk: None, fields: None }
+    }
+}
+
+impl AccountPatch {
+    pub fn apply(self, a: &mut Account) {
+        if let Some(v) = self.alias { a.alias = v; }
+        if let Some(v) = self.description { a.description = v; }
+        if let Some(v) = self.group { a.group = v; }
+        if let Some(v) = self.password { a.password = v; }
+        if let Some(v) = self.anti_afk { a.anti_afk = v; }
+        if let Some(v) = self.fields { a.fields = v; }
+    }
+}
+
 /// Formato de las versiones anteriores (AccountData.json), solo para migrar.
 #[derive(Debug, Deserialize)]
 #[serde(default)]
