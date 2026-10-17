@@ -1,5 +1,7 @@
 ﻿using BrightIdeasSoftware;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using MethodInvoker = System.Windows.Forms.MethodInvoker;
+using TaskDialog = Microsoft.WindowsAPICodePack.Dialogs.TaskDialog;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RBX_Alt_Manager;

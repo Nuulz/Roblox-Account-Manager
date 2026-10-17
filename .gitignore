@@ -332,3 +332,8 @@ __pycache__/
 *.xsd.cs
 
 # OpenCover UI anal
+# Modernization build artifacts
+**/bin/
+**/obj/
+.superpowers/
+RBX Alt Manager/WebView2Data/

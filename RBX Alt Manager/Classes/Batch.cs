@@ -126,7 +126,7 @@ namespace RBX_Alt_Manager.Classes
                 var Response = await ThumbnailAPI.ExecuteAsync(Request);
 
                 if (!Response.IsSuccessful)
-                    throw new HttpException($"{Response.StatusCode} Batch request failed\nBody: {Pending.ToArray()}\nError: {Response.ErrorMessage}");
+                    throw new Exception($"{Response.StatusCode} Batch request failed\nBody: {Pending.ToArray()}\nError: {Response.ErrorMessage}");
 
                 JArray Data = JObject.Parse(Response.Content)?["data"]?.Value<JArray>();
 

@@ -4,7 +4,6 @@ using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using PuppeteerSharp;
 using RBX_Alt_Manager.Classes;
 using RBX_Alt_Manager.Forms;
 using RBX_Alt_Manager.Properties;
@@ -1151,9 +1150,8 @@ namespace RBX_Alt_Manager
             if (!UpdateMultiRoblox() && !General.Get<bool>("HideRbxAlert"))
                 MessageBox.Show("WARNING: Roblox is currently running, multi roblox will not work until you restart the account manager with roblox closed.", "Roblox Account Manager", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-            int Major = Environment.OSVersion.Version.Major, Minor = Environment.OSVersion.Version.Minor;
-
-            PuppeteerSupported = !(Major < 6 || (Major == 6 && Minor <= 1));
+            // WebView2 uses the installed Edge runtime; no Chromium/CefSharp engine to download.
+            PuppeteerSupported = true;
 
             if (General.Get<bool>("UseCefSharpBrowser")) PuppeteerSupported = false;
 
@@ -1165,87 +1163,8 @@ namespace RBX_Alt_Manager
                 OpenBrowserStrip.Items.Remove(joinGroupToolStripMenuItem);
             }
 
-            if (PuppeteerSupported && (!Directory.Exists(AccountBrowser.Fetcher.DownloadsFolder) || Directory.GetDirectories(AccountBrowser.Fetcher.DownloadsFolder).Length == 0))
-            {
-                Add.Visible = false;
-                Remove.Visible = false;
-                DownloadProgressBar.Visible = true;
-                DLChromiumLabel.Visible = true;
-
-                Task.Run(async () =>
-                {
-                    IsDownloadingChromium = true;
-
-                    void DownloadProgressChanged(object s, DownloadProgressChangedEventArgs e) => DownloadProgressBar.InvokeIfRequired(() => { DownloadProgressBar.Value = e.ProgressPercentage; });
-
-                    AccountBrowser.Fetcher.DownloadProgressChanged += DownloadProgressChanged;
-                    await AccountBrowser.Fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
-                    AccountBrowser.Fetcher.DownloadProgressChanged -= DownloadProgressChanged;
-
-                    IsDownloadingChromium = false;
-
-                    this.InvokeIfRequired(() =>
-                    {
-                        Add.Visible = true;
-                        Remove.Visible = true;
-                        DownloadProgressBar.Visible = false;
-                        DLChromiumLabel.Visible = false;
-                    });
-                });
-            }
-            else if (!PuppeteerSupported)
-            {
-                FileInfo Cef = new FileInfo(Path.Combine(Environment.CurrentDirectory, "x86", "CefSharp.dll"));
-
-                if (Cef.Exists)
-                {
-                    FileVersionInfo Info = FileVersionInfo.GetVersionInfo(Cef.FullName);
-
-                    if (Info.ProductMajorPart != 109)
-                        try { Directory.GetParent(Cef.FullName).RecursiveDelete(); } catch { }
-                }
-
-                if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "x86")))
-                {
-                    var Existing = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "x86"));
-
-                    DLChromiumLabel.Text = "Downloading CefSharp...";
-
-                    Add.Visible = false;
-                    Remove.Visible = false;
-                    DownloadProgressBar.Visible = true;
-                    DLChromiumLabel.Visible = true;
-
-                    Task.Run(async () =>
-                    {
-                        IsDownloadingChromium = true;
-
-                        using HttpClient client = new HttpClient();
-
-                        string FileName = Path.GetTempFileName(), DownloadUrl = Resources.CefSharpDownload;
-
-                        var TotalDownloadSize = (await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, DownloadUrl))).Content.Headers.ContentLength.Value;
-                        Progress<float> progress = new Progress<float>(progress => DownloadProgressBar.InvokeIfRequired(() => DownloadProgressBar.Value = (int)(progress * 100)));
-
-                        using (var file = new FileStream(FileName, FileMode.Create, FileAccess.Write, FileShare.None))
-                            await client.DownloadAsync(DownloadUrl, file, progress);
-
-                        if (Existing.Exists) Existing.RecursiveDelete();
-
-                        System.IO.Compression.ZipFile.ExtractToDirectory(FileName, Environment.CurrentDirectory);
-
-                        IsDownloadingChromium = false;
-
-                        this.InvokeIfRequired(() =>
-                        {
-                            Add.Visible = true;
-                            Remove.Visible = true;
-                            DownloadProgressBar.Visible = false;
-                            DLChromiumLabel.Visible = false;
-                        });
-                    });
-                }
-            }
+            DownloadProgressBar.Visible = false;
+            DLChromiumLabel.Visible = false;
 
             if (AccountControl.Get<bool>("StartOnLaunch"))
                 LaunchNexus.PerformClick();
@@ -1311,21 +1230,13 @@ namespace RBX_Alt_Manager
                 Add.Enabled = false;
 
                 try { await new AccountBrowser().Login(); }
+                catch (WebView2RuntimeMissingException)
+                {
+                    MessageBox.Show("The Microsoft Edge WebView2 Runtime is required to add accounts.\n\nDownload it at:\nhttps://developer.microsoft.com/microsoft-edge/webview2/", "WebView2 Runtime Missing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 catch (Exception x)
                 {
                     Program.Logger.Error($"[Add_Click] An error was encountered attempting to login: {x}");
-
-                    if (Utilities.YesNoPrompt($"An error was encountered attempting to login", "You may have a corrupted chromium installation", "Would you like to re-install chromium?", false))
-                    {
-                        MessageBox.Show("Roblox Account Manager will now close since it can't delete the folder while it's in use.", "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                        if (Directory.GetFiles(AccountBrowser.Fetcher.DownloadsFolder).Length <= 1 && Directory.GetDirectories(AccountBrowser.Fetcher.DownloadsFolder).Length <= 1)
-                            Process.Start("cmd.exe", $"/c rmdir /s /q \"{AccountBrowser.Fetcher.DownloadsFolder}\"");
-                        else
-                            Process.Start("explorer.exe", "/select, " + AccountBrowser.Fetcher.DownloadsFolder);
-
-                        Environment.Exit(0);
-                    }
                 }
 
                 Add.Enabled = true;
@@ -1336,48 +1247,8 @@ namespace RBX_Alt_Manager
 
         private void DownloadProgressBar_Click(object sender, EventArgs e)
         {
-            static void ShowManualInstallInstructions()
-            {
-                string Temp = Path.Combine(Path.GetTempPath(), "manual install instructions.html");
-
-                string DownloadLink = PuppeteerSupported ? (string)typeof(BrowserFetcher).GetMethod("GetDownloadURL", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { AccountBrowser.Fetcher.Product, AccountBrowser.Fetcher.Platform, AccountBrowser.Fetcher.DownloadHost, BrowserFetcher.DefaultChromiumRevision }) : Resources.CefSharpDownload;
-                string Directory = PuppeteerSupported ? Path.Combine(AccountBrowser.Fetcher.DownloadsFolder, $"{AccountBrowser.Fetcher.Platform}-{BrowserFetcher.DefaultChromiumRevision}") : Path.Combine(Environment.CurrentDirectory);
-
-                File.WriteAllText(Temp, string.Format(Resources.ManualInstallHTML, PuppeteerSupported ? "Chromium" : "CefSharp", DownloadLink, PuppeteerSupported ? "chrome-win" : "x86", Directory));
-
-                Process.Start(new ProcessStartInfo(Temp) { UseShellExecute = true });
-                Process.Start(new ProcessStartInfo("cmd") { Arguments = $"/c mkdir \"{Directory}\"", CreateNoWindow = true });
-            }
-
-            if (TaskDialog.IsPlatformSupported)
-            {
-                TaskDialog Dialog = new TaskDialog()
-                {
-                    Caption = "Add Account",
-                    InstructionText = $"{(PuppeteerSupported ? "Chromium" : "CefSharp")} is still being downloaded",
-                    Text = "If this is not working for you, you can choose to manually install",
-                    Icon = TaskDialogStandardIcon.Information
-                };
-
-                TaskDialogButton Manual = new TaskDialogButton("Manual", "Download Manually");
-                TaskDialogButton Wait = new TaskDialogButton("Wait", "Wait");
-
-                Wait.Click += (s, e) => Dialog.Close();
-                Manual.Click += (s, e) =>
-                {
-                    Dialog.Close();
-
-                    ShowManualInstallInstructions();
-                };
-
-                Dialog.Controls.Add(Manual);
-                Dialog.Controls.Add(Wait);
-                Wait.Default = true;
-
-                Dialog.Show();
-            }
-            else if (MessageBox.Show($"{(PuppeteerSupported ? "Chromium" : "CefSharp")} is still downloading, you may have to wait a while before adding an account.\n\nNot working? You can choose to manually install by pressing \"Yes\"", "Roblox Account Manager", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information) == DialogResult.Yes)
-                ShowManualInstallInstructions();
+            if (MessageBox.Show("This build uses the Microsoft Edge WebView2 Runtime instead of a bundled browser engine.\n\nIf accounts won't add, install the runtime by pressing \"Yes\".", "Roblox Account Manager", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                Process.Start(new ProcessStartInfo("https://developer.microsoft.com/microsoft-edge/webview2/") { UseShellExecute = true });
         }
 
         private void DLChromiumLabel_Click(object sender, EventArgs e) => DownloadProgressBar_Click(sender, e);
