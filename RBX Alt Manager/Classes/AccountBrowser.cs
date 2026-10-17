@@ -181,11 +181,12 @@ namespace RBX_Alt_Manager.Classes
                     }
                     catch (Exception ex) { Program.Logger.Error($"[AccountBrowser] cookie capture failed: {ex}"); }
                 };
-
-                _ = WatchTypedPasswordAsync(host);
             }
 
             host.Show();
+
+            if (CaptureLogin) _ = WatchTypedPasswordAsync(host);
+
             await host.NavigateAndWaitAsync(Url);
 
             if (!string.IsNullOrEmpty(Script)) await page.EvaluateExpressionAsync(Script);
@@ -195,7 +196,7 @@ namespace RBX_Alt_Manager.Classes
 
         private async Task WatchTypedPasswordAsync(WebView2Host host)
         {
-            while (host != null && !host.IsDisposed && host.Visible)
+            while (host != null && !host.IsDisposed)
             {
                 try
                 {
