@@ -35,6 +35,10 @@ namespace RBX_Alt_Manager
         [JsonIgnore] public DateTime LastAppLaunch;
         [JsonIgnore] public string CSRFToken;
         [JsonIgnore] public UserPresence Presence;
+        [JsonIgnore] public bool NeedsLogin;
+        public bool AntiAfkEnabled;
+        [JsonIgnore] public int AntiAfkMissCount;
+        [JsonIgnore] public DateTime? GameSessionStart;
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
@@ -109,17 +113,40 @@ namespace RBX_Alt_Manager
 
         public RestRequest MakeRequest(string url, Method method = Method.Get) => new RestRequest(url, method).AddCookie(".ROBLOSECURITY", SecurityToken, "/", ".roblox.com");
 
+        /// <summary>
+        /// true = cookie valid, false = signed out (401), null = couldn't tell (rate limit, network).
+        /// </summary>
+        public async Task<bool?> CheckSessionAsync()
+        {
+            RestResponse response = await AccountManager.UsersClient.ExecuteAsync(MakeRequest("v1/users/authenticated", Method.Get));
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                NeedsLogin = false;
+                Valid = true;
+                return true;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                NeedsLogin = true;
+                return false;
+            }
+
+            return null;
+        }
+
         public bool GetAuthTicket(out string Ticket)
         {
             Ticket = string.Empty;
 
             if (!GetCSRFToken(out string Token)) return false;
 
-            RestRequest request = MakeRequest("/v1/authentication-ticket/", Method.Post).AddHeader("X-CSRF-TOKEN", Token).AddHeader("Referer", "https://www.roblox.com/games/4924922222/Brookhaven-RP");
+            RestRequest request = MakeRequest("/v1/authentication-ticket/", Method.Post).AddHeader("X-CSRF-TOKEN", Token).AddHeader("Referer", "https://www.roblox.com/games/4924922222/Brookhaven-RP").AddHeader("RBXAuthenticationNegotiation", "1").AddStringBody("{}", DataFormat.Json);
 
             RestResponse response = AccountManager.AuthClient.Execute(request);
 
-            Parameter TicketHeader = response.Headers.FirstOrDefault(x => x.Name == "rbx-authentication-ticket");
+            Parameter TicketHeader = response.Headers.FirstOrDefault(x => string.Equals(x.Name, "rbx-authentication-ticket", StringComparison.OrdinalIgnoreCase));
 
             if (TicketHeader != null)
             {
@@ -127,6 +154,9 @@ namespace RBX_Alt_Manager
 
                 return true;
             }
+
+            Ticket = $"[{(int)response.StatusCode} {response.StatusCode}] {response.Content}";
+            Program.Logger.Error($"Failed to get auth ticket for {Username}: {Ticket}");
 
             return false;
         }
@@ -654,9 +684,11 @@ namespace RBX_Alt_Manager
                                 LaunchInfo.FileName = $"roblox-player:1+launchmode:play+gameinfo:{Ticket}+launchtime:{LaunchTime}+placelauncherurl:{HttpUtility.UrlEncode($"https://assetgame.roblox.com/game/PlaceLauncher.ashx?request=RequestFollowUser&userId={PlaceID}")}+browsertrackerid:{BrowserTrackerID}+robloxLocale:en_us+gameLocale:en_us+channel:+LaunchExp:InApp";
                             else
                                 LaunchInfo.FileName = $"roblox-player:1+launchmode:play+gameinfo:{Ticket}+launchtime:{LaunchTime}+placelauncherurl:{HttpUtility.UrlEncode($"https://assetgame.roblox.com/game/PlaceLauncher.ashx?request=RequestGame{(string.IsNullOrEmpty(JobID) ? "" : "Job")}&browserTrackerId={BrowserTrackerID}&placeId={PlaceID}{(string.IsNullOrEmpty(JobID) ? "" : ("&gameId=" + JobID))}&isPlayTogetherGame=false{(AccountManager.IsTeleport ? "&isTeleport=true" : "")}")}+browsertrackerid:{BrowserTrackerID}+robloxLocale:en_us+gameLocale:en_us+channel:+LaunchExp:InApp";
+                            LaunchInfo.UseShellExecute = true; // .NET 8 defaults to false, which can't open the roblox-player: protocol
+
                             Process Launcher = Process.Start(LaunchInfo);
-                            
-                            Launcher.WaitForExit();
+
+                            Launcher?.WaitForExit(); // the shell may hand off to an existing launcher and return no process
 
                             AccountManager.Instance.NextAccount();
 
@@ -674,7 +706,7 @@ namespace RBX_Alt_Manager
                 }
             }
             else
-                return "ERROR: Invalid Authentication Ticket, re-add the account or try again\n(Failed to get Authentication Ticket, Roblox has probably signed you out)";
+                return $"ERROR: Invalid Authentication Ticket, re-add the account or try again\n(Failed to get Authentication Ticket, Roblox has probably signed you out)\n{Ticket}";
         }
 
         public async void AdjustWindowPosition()

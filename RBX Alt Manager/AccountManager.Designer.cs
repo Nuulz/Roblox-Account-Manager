@@ -35,6 +35,7 @@ namespace RBX_Alt_Manager
             this.LabelJobID = new System.Windows.Forms.Label();
             this.AddAccountsStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.manualToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.signupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.bulkUserPassToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.byCookieToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.customURLJSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,6 +57,7 @@ namespace RBX_Alt_Manager
             this.copyUserIdToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sortAlphabeticallyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quickLogInToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.antiAfkToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveGroupUpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toggleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveToToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -145,6 +147,7 @@ namespace RBX_Alt_Manager
             // 
             this.AddAccountsStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.manualToolStripMenuItem,
+            this.signupToolStripMenuItem,
             this.bulkUserPassToolStripMenuItem,
             this.byCookieToolStripMenuItem,
             this.customURLJSToolStripMenuItem});
@@ -157,6 +160,13 @@ namespace RBX_Alt_Manager
             this.manualToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.manualToolStripMenuItem.Text = "Manual Login";
             this.manualToolStripMenuItem.Click += new System.EventHandler(this.manualToolStripMenuItem_Click);
+            //
+            // signupToolStripMenuItem
+            //
+            this.signupToolStripMenuItem.Name = "signupToolStripMenuItem";
+            this.signupToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.signupToolStripMenuItem.Text = "Crear cuenta nueva";
+            this.signupToolStripMenuItem.Click += new System.EventHandler(this.signupToolStripMenuItem_Click);
             // 
             // bulkUserPassToolStripMenuItem
             // 
@@ -265,6 +275,7 @@ namespace RBX_Alt_Manager
             this.copyToolStripMenuItem,
             this.sortAlphabeticallyToolStripMenuItem,
             this.quickLogInToolStripMenuItem,
+            this.antiAfkToolStripMenuItem,
             this.moveGroupUpToolStripMenuItem,
             this.infoToolStripMenuItem,
             this.viewFieldsToolStripMenuItem,
@@ -275,6 +286,7 @@ namespace RBX_Alt_Manager
             this.copyAppLinkToolStripMenuItem});
             this.AccountsStrip.Name = "contextMenuStrip1";
             this.AccountsStrip.Size = new System.Drawing.Size(209, 290);
+            this.AccountsStrip.Opening += new System.ComponentModel.CancelEventHandler(this.AccountsStrip_Opening);
             // 
             // addAccountsToolStripMenuItem
             // 
@@ -350,6 +362,13 @@ namespace RBX_Alt_Manager
             this.quickLogInToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
             this.quickLogInToolStripMenuItem.Text = "Quick Log In";
             this.quickLogInToolStripMenuItem.Click += new System.EventHandler(this.quickLogInToolStripMenuItem_Click);
+            //
+            // antiAfkToolStripMenuItem
+            //
+            this.antiAfkToolStripMenuItem.Name = "antiAfkToolStripMenuItem";
+            this.antiAfkToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
+            this.antiAfkToolStripMenuItem.Text = "Anti-AFK";
+            this.antiAfkToolStripMenuItem.Click += new System.EventHandler(this.antiAfkToolStripMenuItem_Click);
             // 
             // moveGroupUpToolStripMenuItem
             // 
@@ -1176,6 +1195,7 @@ namespace RBX_Alt_Manager
         private System.Windows.Forms.ToolStripMenuItem ShowDetailsToolStripMenuItem;
         private System.Windows.Forms.ContextMenuStrip AddAccountsStrip;
         private System.Windows.Forms.ToolStripMenuItem manualToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem signupToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem bulkUserPassToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem byCookieToolStripMenuItem;
         private System.Windows.Forms.ContextMenuStrip OpenBrowserStrip;
@@ -1198,6 +1218,7 @@ namespace RBX_Alt_Manager
         private System.Windows.Forms.Label Password2Label;
         private System.Windows.Forms.Timer PresenceUpdateTimer;
         private System.Windows.Forms.ToolStripMenuItem quickLogInToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem antiAfkToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem customURLJSToolStripMenuItem;
         private System.Windows.Forms.ProgressBar DownloadProgressBar;
         private System.Windows.Forms.Label DLChromiumLabel;

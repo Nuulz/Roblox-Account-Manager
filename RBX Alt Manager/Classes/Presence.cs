@@ -34,6 +34,16 @@ namespace RBX_Alt_Manager.Classes
                     {
                         account.Presence = Presence;
 
+                        if (Presence.userPresenceType == UserPresenceType.InGame)
+                        {
+                            if (account.GameSessionStart == null)
+                                account.GameSessionStart = DateTime.Now;
+                        }
+                        else
+                        {
+                            account.GameSessionStart = null;
+                        }
+
                         Updated.Add(account);
                     }
             }

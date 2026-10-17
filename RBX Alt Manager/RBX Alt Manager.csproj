@@ -55,4 +55,17 @@
     </None>
   </ItemGroup>
 
+  <PropertyGroup>
+    <PersonalInstallDir>D:\RAM-Personal\</PersonalInstallDir>
+  </PropertyGroup>
+
+  <!-- only build output is copied; account data / settings living in the install dir are never overwritten -->
+  <Target Name="CopyToPersonalInstall" AfterTargets="Build" Condition="'$(Configuration)'=='Debug'">
+    <ItemGroup>
+      <PersonalFiles Include="$(OutDir)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PersonalFiles)" DestinationFiles="@(PersonalFiles->'$(PersonalInstallDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+    <Message Importance="high" Text="Personal install updated -> $(PersonalInstallDir)" />
+  </Target>
+
 </Project>

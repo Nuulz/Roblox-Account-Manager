@@ -210,12 +210,21 @@ namespace RBX_Alt_Manager.Classes
             }
         }
 
-        public async Task Login(string Username = "", string Password = "", string[] Arguments = null)
+        public async Task Login(string Username = "", string Password = "", string[] Arguments = null, string ProfileKey = "_login")
         {
             CaptureLogin = true;
             CapturedPassword = Password ?? string.Empty;
-            await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, ProfileKey: "_login",
+            await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, ProfileKey: ProfileKey,
                 PostNavigation: async (page) => await LoginTask(page, Username, Password));
+        }
+
+        public async Task Signup()
+        {
+            CaptureLogin = true;
+            CapturedPassword = string.Empty;
+            // fresh isolated profile + its own stable UA, same as a per-account login
+            await LaunchBrowser("https://www.roblox.com/", ProfileKey: "_signup_" + Guid.NewGuid().ToString("N"),
+                PostNavigation: async (page) => await page.EvaluateExpressionAsync(@"document.body.classList.remove(""light-theme"");document.body.classList.add(""dark-theme"");"));
         }
 
         public async Task LoginTask(BrowserPage page, string Username = "", string Password = "")

@@ -230,7 +230,9 @@ public static Color Lerp(this Color s, Color t, float k)
             StandardButtons = TaskDialogStandardButtons.Yes | TaskDialogStandardButtons.No,
         } : null;
 
-        var DR = Dialog?.Show();
+        TaskDialogResult? DR = null;
+        try { DR = Dialog?.Show(); }
+        catch { Dialog = null; } // WindowsAPICodePack can't resolve its path in single-file publishes
 
         if (CanSave && Dialog?.FooterCheckBoxChecked == true)
         {

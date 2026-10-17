@@ -94,6 +94,26 @@ namespace RBX_Alt_Manager
         [DllImport("DwmApi")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int[] attrValue, int attrSize);
 
+        [DllImport("user32.dll")]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        private const uint WM_KEYDOWN = 0x0100;
+        private const uint WM_KEYUP   = 0x0101;
+        private const int  VK_SPACE   = 0x20;
+        private const int  VK_W       = 0x57;
+        private const int  VK_A       = 0x41;
+        private const int  VK_D       = 0x44;
+
+        private static readonly int[][] AntiAfkSequences = new[]
+        {
+            new[] { VK_SPACE },
+            new[] { VK_W, VK_SPACE },
+            new[] { VK_A, VK_SPACE },
+            new[] { VK_D, VK_SPACE },
+            new[] { VK_W },
+        };
+        private static readonly Random AntiAfkRng = new Random();
+
         public static void SetDarkBar(IntPtr Handle)
         {
             if (ThemeEditor.UseDarkTopBar && DwmSetWindowAttribute(Handle, 19, new[] { 1 }, 4) != 0)
@@ -580,8 +600,10 @@ namespace RBX_Alt_Manager
                     account = exists;
 
                     exists.SecurityToken = SecurityToken;
-                    exists.Password = Password;
+                    if (!string.IsNullOrEmpty(Password)) exists.Password = Password;
                     exists.LastUse = DateTime.Now;
+                    exists.NeedsLogin = false;
+                    exists.Valid = true;
 
                     Instance.RefreshView(exists);
                 }
@@ -699,10 +721,10 @@ namespace RBX_Alt_Manager
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
 
                         WebClient WC = new WebClient();
-                        Assembly assembly = Assembly.GetExecutingAssembly();
-                        FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+                        // Assembly.Location is empty in single-file publishes
+                        FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
                         WC.Headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36";
-                        string Releases = WC.DownloadString("https://api.github.com/repos/ic3w0lf22/Roblox-Account-Manager/releases/latest");
+                        string Releases = WC.DownloadString($"https://api.github.com/repos/{Program.UpdateRepo}/releases/latest");
                         Match match = Regex.Match(Releases, @"""tag_name"":\s*""?([^""]+)");
 
                         if (match.Success)
@@ -818,6 +840,22 @@ namespace RBX_Alt_Manager
 
             var PresenceTimer = new System.Timers.Timer(60000 * 2) { Enabled = true };
             PresenceTimer.Elapsed += (s, e) => AccountsView.InvokeIfRequired(async () => await UpdatePresence());
+
+            var SessionDisplayTimer = new System.Timers.Timer(60000) { Enabled = true };
+            SessionDisplayTimer.Elapsed += (s, e) => AccountsView.InvokeIfRequired(() =>
+            {
+                var active = AccountsList.Where(a => a.GameSessionStart != null).ToList();
+                if (active.Count > 0) AccountsView.RefreshObjects(active);
+            });
+
+            var AntiAfkTimer = new System.Timers.Timer(NextAntiAfkInterval()) { AutoReset = false };
+            AntiAfkTimer.Elapsed += (s, e) =>
+            {
+                TickAntiAfk();
+                AntiAfkTimer.Interval = NextAntiAfkInterval();
+                AntiAfkTimer.Start();
+            };
+            AntiAfkTimer.Start();
         }
 
         public void ApplyTheme()
@@ -1182,6 +1220,36 @@ namespace RBX_Alt_Manager
 
             if (AccountControl.Get<bool>("StartOnLaunch"))
                 LaunchNexus.PerformClick();
+
+            AccountsView.MouseDoubleClick += AccountsView_MouseDoubleClick;
+            _ = SessionCheckerLoop();
+        }
+
+        private async Task SessionCheckerLoop()
+        {
+            while (!IsDisposed)
+            {
+                foreach (Account account in AccountsList.ToList())
+                {
+                    try
+                    {
+                        if (await account.CheckSessionAsync() is bool)
+                            UpdateAccountView(account);
+                    }
+                    catch (Exception x) { Program.Logger.Error($"Session check failed for {account.Username}: {x}"); }
+
+                    await Task.Delay(1500); // spread requests so we don't get rate limited
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(10));
+            }
+        }
+
+        private void AccountsView_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if ((AccountsView.GetItemAt(e.X, e.Y) as BrightIdeasSoftware.OLVListItem)?.RowObject is not Account account || !account.NeedsLogin) return;
+
+            _ = new AccountBrowser().Login(account.Username, account.Password, ProfileKey: account.UserID.ToString());
         }
 
         public bool UpdateMultiRoblox()
@@ -1257,6 +1325,19 @@ namespace RBX_Alt_Manager
             }
             else
                 CefBrowser.Instance.Login();
+        }
+
+        private async void signupToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try { await new AccountBrowser().Signup(); }
+            catch (WebView2RuntimeMissingException)
+            {
+                MessageBox.Show("The Microsoft Edge WebView2 Runtime is required to create accounts.\n\nDownload it at:\nhttps://developer.microsoft.com/microsoft-edge/webview2/", "WebView2 Runtime Missing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception x)
+            {
+                Program.Logger.Error($"[Signup] An error was encountered attempting to sign up: {x}");
+            }
         }
 
         private void DownloadProgressBar_Click(object sender, EventArgs e)
@@ -1839,6 +1920,27 @@ namespace RBX_Alt_Manager
             await SelectedAccount.QuickLogIn(Code);
         }
 
+        private void AccountsStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var selected = AccountsView.SelectedObjects.Cast<Account>().ToList();
+            bool anyEnabled = selected.Any(a => a.AntiAfkEnabled);
+            antiAfkToolStripMenuItem.Checked = anyEnabled;
+            antiAfkToolStripMenuItem.Text = anyEnabled ? "Anti-AFK (activado)" : "Anti-AFK";
+        }
+
+        private void antiAfkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var selected = AccountsView.SelectedObjects.Cast<Account>().ToList();
+            if (selected.Count == 0) return;
+
+            bool enable = !selected.All(a => a.AntiAfkEnabled);
+            foreach (Account account in selected)
+                account.AntiAfkEnabled = enable;
+
+            SaveAccounts();
+            AccountsView.RefreshSelectedObjects();
+        }
+
         private void toggleToolStripMenuItem_Click(object sender, EventArgs e)
         {
             AccountsView.ShowGroups = !AccountsView.ShowGroups;
@@ -2033,6 +2135,53 @@ namespace RBX_Alt_Manager
 
                 AccountsView.InvokeIfRequired(async () => await UpdatePresence());
             }, PresenceCancellationToken.Token);
+        }
+
+        private static double NextAntiAfkInterval() =>
+            60000 * (10 + AntiAfkRng.NextDouble() * 6); // 10–16 min aleatorio
+
+        private void TickAntiAfk()
+        {
+            foreach (Account account in AccountsList)
+            {
+                if (!account.AntiAfkEnabled) continue;
+
+                bool found = false;
+                try
+                {
+                    foreach (Process proc in Process.GetProcessesByName("RobloxPlayerBeta"))
+                    {
+                        if (proc.MainWindowHandle == IntPtr.Zero) continue;
+
+                        var match = System.Text.RegularExpressions.Regex.Match(proc.GetCommandLine(), @"\-b (\d+)");
+                        if (!match.Success || match.Groups[1].Value != account.BrowserTrackerID) continue;
+
+                        int[] keys = AntiAfkSequences[AntiAfkRng.Next(AntiAfkSequences.Length)];
+                        foreach (int key in keys)
+                        {
+                            PostMessage(proc.MainWindowHandle, WM_KEYDOWN, (IntPtr)key, IntPtr.Zero);
+                            PostMessage(proc.MainWindowHandle, WM_KEYUP,   (IntPtr)key, IntPtr.Zero);
+                        }
+
+                        found = true;
+                        account.AntiAfkMissCount = 0;
+                        break;
+                    }
+                }
+                catch { }
+
+                if (!found)
+                {
+                    account.AntiAfkMissCount++;
+                    if (account.AntiAfkMissCount >= 2)
+                    {
+                        account.AntiAfkEnabled = false;
+                        account.AntiAfkMissCount = 0;
+                        SaveAccounts();
+                        AccountsView.InvokeIfRequired(() => AccountsView.UpdateObject(account));
+                    }
+                }
+            }
         }
 
         private async Task UpdatePresence()

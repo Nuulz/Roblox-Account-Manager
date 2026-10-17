@@ -337,3 +337,8 @@ __pycache__/
 **/obj/
 .superpowers/
 RBX Alt Manager/WebView2Data/
+
+publish_out/
+publish_sc/
+release_pkg/
+*.zip

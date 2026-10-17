@@ -22,6 +22,7 @@ namespace RBX_Alt_Manager
         /// </summary>
 
         public static readonly ILog Logger = LogManager.GetLogger("Account Manager");
+        public const string UpdateRepo = "Nuulz/Roblox-Account-Manager";
         public static bool Closed = false; // RobloxProcess.cs would cause the program to chill in the background as long roblox was also running
         public static bool Elevated;
         public static float Scale
