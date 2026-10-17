@@ -389,4 +389,21 @@ async function loadMain() {
   if (s.general.checkForUpdates) checkUpdate(false);
 }
 
+// ───────────────────────── ventana y tema
+const appWin = window.__TAURI__.window.getCurrentWindow();
+const winAct = { min: () => appWin.minimize(), max: () => appWin.toggleMaximize(), close: () => appWin.close() };
+$('win-min').onclick = winAct.min;
+$('win-max').onclick = winAct.max;
+$('win-close').onclick = winAct.close;
+document.querySelectorAll('[data-win]').forEach((b) => b.onclick = winAct[b.dataset.win]);
+document.querySelector('header').addEventListener('dblclick', (e) => { if (e.target.hasAttribute('data-tauri-drag-region')) winAct.max(); });
+
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('theme', t); } catch {}
+  appWin.setTheme(t).catch(() => {});
+}
+$('btn-theme').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+applyTheme(document.documentElement.dataset.theme || 'light');
+
 invoke('vault_startup').then(showVault).catch((e) => toast('error', e));

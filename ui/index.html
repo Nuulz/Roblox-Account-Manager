@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <title>Roblox Account Manager</title>
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
 </head>
 <body>
   <!-- Bóveda -->
   <div id="vault" class="overlay hidden">
+    <div class="vault-bar" data-tauri-drag-region><span data-tauri-drag-region>[R.A.M]</span><div class="winctl"><button data-win="min">&#xE921;</button><button data-win="close" class="x">&#xE8BB;</button></div></div>
     <div class="card">
       <h1>Roblox Account Manager</h1>
       <div id="vault-locked" class="hidden">
@@ -39,16 +42,22 @@
       <button id="update-go" class="primary">Actualizar ahora</button>
       <button id="update-later">Más tarde</button>
     </div>
-    <header>
-      <div class="brand">[R.A.M] <span>by Nuulz</span></div>
+    <header data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>[R.A.M]<span>by Nuulz</span></div>
       <input id="search" placeholder="Buscar cuenta…">
-      <div class="grow"></div>
+      <div class="grow" data-tauri-drag-region></div>
       <span id="multi" class="pill" title="Multi Roblox"></span>
-      <span id="rbx-ver" class="muted"></span>
-      <button id="btn-servers">Servidores</button>
-      <button id="btn-games">Juegos</button>
-      <button id="btn-settings">Ajustes</button>
-      <button id="btn-add" class="primary">+ Agregar cuenta</button>
+      <span id="rbx-ver" class="ver" data-tauri-drag-region></span>
+      <button id="btn-servers" class="hbtn">Servidores</button>
+      <button id="btn-games" class="hbtn">Juegos</button>
+      <button id="btn-settings" class="hbtn">Ajustes</button>
+      <button id="btn-theme" class="hbtn icon" title="Modo oscuro / claro">◐</button>
+      <button id="btn-add" class="primary">+ Agregar</button>
+      <div class="winctl">
+        <button id="win-min" title="Minimizar">&#xE921;</button>
+        <button id="win-max" title="Maximizar">&#xE922;</button>
+        <button id="win-close" class="x" title="Cerrar">&#xE8BB;</button>
+      </div>
     </header>
 
     <main>

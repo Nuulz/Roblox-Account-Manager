@@ -12,14 +12,14 @@
       {
         "label": "main",
         "title": "Roblox Account Manager",
-        "width": 1180,
-        "height": 740,
-        "minWidth": 900,
-        "minHeight": 560,
+        "width": 980,
+        "height": 620,
+        "minWidth": 780,
+        "minHeight": 480,
         "center": true,
-        "theme": "Light",
-        "backgroundColor": "#ece9e4",
-        "dragDropEnabled": false
+        "backgroundColor": "#f3f1ee",
+        "dragDropEnabled": false,
+        "decorations": false
       }
     ],
     "security": {
@@ -28,14 +28,23 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "publisher": "Nuulz",
     "copyright": "GPL-3.0 - Nuulz",
     "category": "Utility",
     "shortDescription": "Roblox Account Manager",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" }
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
     }
   }
 }
