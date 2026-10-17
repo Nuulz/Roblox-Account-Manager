@@ -132,6 +132,17 @@ async fn server_region(ip: String) -> String {
 // ─────────────────────────────────── juegos
 
 #[tauri::command]
+async fn user_id_by_name(username: String) -> CmdResult<i64> {
+    let cookie = st().any_cookie();
+    roblox::api().user_id(username.trim(), cookie.as_deref()).await.map_err(ops::err)
+}
+
+#[tauri::command]
+async fn place_name(place_id: i64) -> Option<String> {
+    roblox::api().place_name(place_id).await
+}
+
+#[tauri::command]
 fn games_list() -> games::GamesData {
     st().games.read().clone()
 }
@@ -338,6 +349,8 @@ pub fn run() {
             server_region,
             // juegos
             games_list,
+            user_id_by_name,
+            place_name,
             game_add_favorite,
             game_remove_favorite,
             game_clear_recent,

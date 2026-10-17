@@ -12,14 +12,14 @@
       {
         "label": "main",
         "title": "Roblox Account Manager",
-        "width": 980,
-        "height": 620,
-        "minWidth": 780,
-        "minHeight": 480,
+        "width": 915,
+        "height": 347,
+        "minWidth": 760,
+        "minHeight": 330,
         "center": true,
-        "backgroundColor": "#f3f1ee",
+        "backgroundColor": "#1e1e1e",
         "dragDropEnabled": false,
-        "decorations": false
+        "decorations": true
       }
     ],
     "security": {

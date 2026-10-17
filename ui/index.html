@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="es">
-
 <head>
   <meta charset="utf-8">
   <title>Roblox Account Manager</title>
@@ -10,149 +9,153 @@
 <body>
   <!-- Bóveda -->
   <div id="vault" class="overlay hidden">
-    <div class="vault-bar" data-tauri-drag-region><span data-tauri-drag-region>[R.A.M]</span><div class="winctl"><button data-win="min">&#xE921;</button><button data-win="close" class="x">&#xE8BB;</button></div></div>
     <div class="card">
-      <h1>Roblox Account Manager</h1>
+      <h2>Roblox Account Manager</h2>
       <div id="vault-locked" class="hidden">
         <p>Escribe tu contraseña maestra.</p>
         <input id="vault-pass" type="password" placeholder="Contraseña">
-        <button id="vault-unlock" class="primary">Desbloquear</button>
+        <div class="actions"><button id="vault-unlock" class="primary">Desbloquear</button></div>
       </div>
       <div id="vault-legacy" class="hidden">
         <p>Se encontró un archivo de la versión anterior protegido con contraseña.</p>
         <input id="legacy-pass" type="password" placeholder="Contraseña anterior">
-        <button id="legacy-unlock" class="primary">Migrar</button>
+        <div class="actions"><button id="legacy-unlock" class="primary">Migrar</button></div>
       </div>
       <div id="vault-setup" class="hidden">
         <p id="setup-msg">Elige cómo proteger tus cuentas.</p>
-        <label class="opt"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI)</label>
-        <label class="opt"><input type="radio" name="mode" value="password"> Contraseña maestra</label>
-        <label class="opt"><input type="radio" name="mode" value="plain"> Sin cifrar</label>
+        <label class="row"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI)</label>
+        <label class="row"><input type="radio" name="mode" value="password"> Contraseña maestra</label>
+        <label class="row"><input type="radio" name="mode" value="plain"> Sin cifrar</label>
         <input id="setup-pass" type="password" placeholder="Contraseña maestra" class="hidden">
-        <button id="setup-ok" class="primary">Continuar</button>
+        <div class="actions"><button id="setup-ok" class="primary">Continuar</button></div>
       </div>
       <p id="vault-err" class="err"></p>
     </div>
   </div>
 
-  <!-- Principal -->
   <div id="app">
     <div id="update-bar" class="update-bar hidden">
       <span id="update-text"></span>
-      <button id="update-go" class="primary">Actualizar ahora</button>
+      <button id="update-go">Actualizar ahora</button>
       <button id="update-later">Más tarde</button>
     </div>
-    <header data-tauri-drag-region>
-      <div class="brand" data-tauri-drag-region>[R.A.M]<span>by Nuulz</span></div>
-      <input id="search" placeholder="Buscar cuenta…">
-      <div class="grow" data-tauri-drag-region></div>
-      <span id="multi" class="pill" title="Multi Roblox"></span>
-      <span id="rbx-ver" class="ver" data-tauri-drag-region></span>
-      <button id="btn-servers" class="hbtn">Servidores</button>
-      <button id="btn-games" class="hbtn">Juegos</button>
-      <button id="btn-settings" class="hbtn">Ajustes</button>
-      <button id="btn-theme" class="hbtn icon" title="Modo oscuro / claro">◐</button>
-      <button id="btn-add" class="primary">+ Agregar</button>
-      <div class="winctl">
-        <button id="win-min" title="Minimizar">&#xE921;</button>
-        <button id="win-max" title="Maximizar">&#xE922;</button>
-        <button id="win-close" class="x" title="Cerrar">&#xE8BB;</button>
+
+    <div class="main">
+      <div class="left">
+        <div class="list">
+          <table>
+            <thead><tr><th class="c-user">Usuario</th><th class="c-alias">Alias</th><th class="c-desc">Descripción</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <div id="empty" class="empty hidden">No hay cuentas. Usa "Agregar cuenta".</div>
+        </div>
+        <div class="bottom">
+          <button id="btn-add">Agregar cuenta</button>
+          <button id="btn-remove">Eliminar</button>
+          <label class="row"><input type="checkbox" id="hide-names"> Ocultar usuarios</label>
+          <label class="row" id="multi-label"><input type="checkbox" id="multi-chk"> Multi Roblox <span id="multi" class="multi-state"></span></label>
+          <input id="search" placeholder="Buscar…">
+        </div>
       </div>
-    </header>
 
-    <main>
-      <section class="list">
-        <table>
-          <thead><tr><th class="chk"><input type="checkbox" id="sel-all"></th><th>Cuenta</th><th>Grupo</th><th>Estado</th><th>Último uso</th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
-        <div id="empty" class="empty hidden">No hay cuentas. Agrega una con su cookie.</div>
-      </section>
-
-      <aside class="side">
-        <div class="box">
-          <h3>Unirse</h3>
-          <div class="box-body">
-            <label>Place ID<input id="place-id" inputmode="numeric"></label>
-            <label>Job ID / enlace VIP<input id="job-id"></label>
-            <label class="row"><input type="checkbox" id="follow"> Seguir usuario (Place ID = User ID)</label>
-            <button id="btn-join" class="primary wide">Unirse con seleccionadas</button>
-            <button id="btn-cancel" class="wide hidden">Cancelar cola</button>
-            <div id="progress" class="muted"></div>
-          </div>
+      <div class="right">
+        <div class="r-head">
+          <div class="game-name" id="game-name">&nbsp;</div>
+          <button id="btn-theme" class="icon" title="Modo claro / oscuro">◐</button>
+          <button id="btn-settings" class="icon" title="Ajustes">⚙</button>
         </div>
-        <div class="box">
-          <h3>Detalles</h3>
-          <div id="details" class="box-body muted">Selecciona una cuenta.</div>
+        <div class="r-labels"><span>Place ID</span><span>Job ID</span></div>
+        <div class="r-ids">
+          <input id="place-id" inputmode="numeric">
+          <button id="btn-shuffle" class="icon small" title="Servidor aleatorio si no hay Job ID">⇄</button>
+          <input id="job-id">
+          <button id="btn-save-game" class="icon small" title="Guardar Place/Job en las cuentas seleccionadas">💾</button>
         </div>
-      </aside>
-    </main>
+        <div class="r-row"><button id="btn-join" class="grow">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
+        <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
+        <div class="r-row"><input id="alias" class="grow" placeholder="Alias"><button id="btn-alias">Poner alias</button></div>
+        <textarea id="desc" placeholder="Descripción"></textarea>
+        <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
+        <div class="r-grid">
+          <button id="btn-desc">Guardar descripción</button>
+          <button id="btn-games">Juegos recientes</button>
+          <button id="btn-afk">Anti-AFK</button>
+          <button id="btn-group">Mover a grupo</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Agregar cuenta -->
   <div id="dlg-add" class="overlay hidden">
     <div class="card">
       <h2>Agregar cuenta</h2>
-      <label>Cookie .ROBLOSECURITY<textarea id="add-cookie" rows="4"></textarea></label>
+      <label>Cookie .ROBLOSECURITY<textarea id="add-cookie" rows="3"></textarea></label>
       <label>Contraseña (opcional)<input id="add-pass" type="password"></label>
       <p id="add-err" class="err"></p>
       <div class="actions"><button id="add-cancel">Cancelar</button><button id="add-ok" class="primary">Agregar</button></div>
     </div>
   </div>
 
-  <!-- Servidores -->
+  <div id="dlg-group" class="overlay hidden">
+    <div class="card">
+      <h2>Mover a grupo</h2>
+      <input id="group-name" list="group-list" placeholder="Nombre del grupo">
+      <datalist id="group-list"></datalist>
+      <div class="actions"><button data-close="dlg-group">Cancelar</button><button id="group-ok" class="primary">Mover</button></div>
+    </div>
+  </div>
+
   <div id="dlg-servers" class="overlay hidden">
     <div class="card big">
-      <div class="dlg-head"><h2>Servidores</h2><button class="close" data-close="dlg-servers">✕</button></div>
-      <div class="row-inputs">
-        <input id="srv-place" placeholder="Place ID" inputmode="numeric">
-        <button id="srv-load" class="primary">Cargar</button>
+      <h2>Servidores <button class="close" data-close="dlg-servers">✕</button></h2>
+      <div class="r-row">
+        <input id="srv-place" class="grow" placeholder="Place ID" inputmode="numeric">
+        <button id="srv-load">Cargar</button>
         <button id="srv-more" class="hidden">Más</button>
       </div>
       <div class="scroll">
-        <table><thead><tr><th>Jugadores</th><th>Ping</th><th>FPS</th><th>Job ID</th><th></th></tr></thead><tbody id="srv-rows"></tbody></table>
+        <table><thead><tr><th>Jugadores</th><th>Ping</th><th>FPS</th><th>Job ID</th><th style="width:60px"></th></tr></thead><tbody id="srv-rows"></tbody></table>
       </div>
       <p id="srv-msg" class="muted"></p>
     </div>
   </div>
 
-  <!-- Juegos -->
   <div id="dlg-games" class="overlay hidden">
     <div class="card big">
-      <div class="dlg-head"><h2>Juegos</h2><button class="close" data-close="dlg-games">✕</button></div>
-      <div class="tabs"><button data-tab="favorites" class="tab on">Favoritos</button><button data-tab="recent" class="tab">Recientes</button><div class="grow"></div><button id="games-clear" class="hidden">Limpiar recientes</button></div>
-      <div id="games-list" class="games scroll"></div>
+      <h2>Juegos <button class="close" data-close="dlg-games">✕</button></h2>
+      <div class="r-row"><button data-tab="recent" class="tab on">Recientes</button><button data-tab="favorites" class="tab">Favoritos</button><span class="grow"></span><button id="games-clear">Limpiar recientes</button></div>
+      <div id="games-list" class="scroll games"></div>
     </div>
   </div>
 
-  <!-- Ajustes -->
   <div id="dlg-settings" class="overlay hidden">
     <div class="card big">
-      <div class="dlg-head"><h2>Ajustes</h2><button class="close" data-close="dlg-settings">✕</button></div>
+      <h2>Ajustes <button class="close" data-close="dlg-settings">✕</button></h2>
       <div class="scroll settings">
-        <h3>Roblox</h3>
-        <label class="row"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox (varias instancias a la vez)</label>
-        <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773)</label>
-        <label class="row"><input type="checkbox" data-k="autoCloseLastProcess"> Cerrar el Roblox anterior de la cuenta al lanzar</label>
-        <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS</label>
-        <label>FPS máximos<input type="number" data-k="maxFps" min="30"></label>
-        <h3>Lanzamiento</h3>
-        <label>Retraso entre cuentas (s)<input type="number" data-k="accountJoinDelay" min="0"></label>
-        <label class="row"><input type="checkbox" data-k="asyncJoin"> Esperar a que se abra cada Roblox en vez de usar el retraso</label>
-        <label class="row"><input type="checkbox" data-k="shuffleJobId"> Elegir servidor aleatorio si no hay Job ID</label>
-        <label class="row"><input type="checkbox" data-k="shuffleLowestServer"> Preferir el servidor más vacío</label>
-        <label class="row"><input type="checkbox" data-k="isTeleport"> Unirse como teletransporte</label>
-        <h3>Cuentas</h3>
-        <label class="row"><input type="checkbox" data-k="savePasswords"> Guardar contraseñas</label>
-        <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado (en línea / en juego)</label>
-        <label>Actualizar estado cada (min)<input type="number" data-k="presenceUpdateMinutes" min="1"></label>
-        <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar</label>
-        <label>Anti-AFK: mínimo (min)<input type="number" data-k="antiAfkMinMinutes" min="1"></label>
-        <label>Anti-AFK: máximo (min)<input type="number" data-k="antiAfkMaxMinutes" min="1"></label>
-        <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
-        <h3>App</h3>
-        <label class="row"><input type="checkbox" data-k="checkForUpdates"> Buscar actualizaciones al iniciar</label>
-        <div class="row-inputs"><button id="btn-check-update">Buscar actualización</button><span id="app-ver" class="muted"></span></div>
+        <fieldset><legend>Roblox</legend>
+          <label class="row"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox</label>
+          <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773)</label>
+          <label class="row"><input type="checkbox" data-k="autoCloseLastProcess"> Cerrar el Roblox anterior de la cuenta al lanzar</label>
+          <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS, máximo <input type="number" data-k="maxFps" min="30" class="num"></label>
+        </fieldset>
+        <fieldset><legend>Lanzamiento</legend>
+          <label class="row">Retraso entre cuentas <input type="number" data-k="accountJoinDelay" min="0" class="num"> s</label>
+          <label class="row"><input type="checkbox" data-k="asyncJoin"> Esperar a que abra cada Roblox en vez del retraso</label>
+          <label class="row"><input type="checkbox" data-k="shuffleJobId"> Servidor aleatorio si no hay Job ID</label>
+          <label class="row"><input type="checkbox" data-k="shuffleLowestServer"> Preferir el servidor más vacío</label>
+          <label class="row"><input type="checkbox" data-k="isTeleport"> Unirse como teletransporte</label>
+        </fieldset>
+        <fieldset><legend>Cuentas</legend>
+          <label class="row"><input type="checkbox" data-k="savePasswords"> Guardar contraseñas</label>
+          <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado, cada <input type="number" data-k="presenceUpdateMinutes" min="1" class="num"> min</label>
+          <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar</label>
+          <label class="row">Anti-AFK entre <input type="number" data-k="antiAfkMinMinutes" min="1" class="num"> y <input type="number" data-k="antiAfkMaxMinutes" min="1" class="num"> min</label>
+          <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
+        </fieldset>
+        <fieldset><legend>Aplicación</legend>
+          <label class="row"><input type="checkbox" data-k="checkForUpdates"> Buscar actualizaciones al iniciar</label>
+          <div class="r-row"><button id="btn-check-update">Buscar actualización</button><span id="app-ver" class="muted"></span></div>
+        </fieldset>
       </div>
       <p id="set-err" class="err"></p>
       <div class="actions"><button data-close="dlg-settings">Cancelar</button><button id="set-save" class="primary">Guardar</button></div>
@@ -160,10 +163,12 @@
   </div>
 
   <ul id="ctx" class="ctx hidden">
-    <li data-act="edit">Editar alias / grupo…</li>
-    <li data-act="save-game">Guardar Place/Job actual para esta cuenta</li>
+    <li data-act="join">Unirse al servidor</li>
+    <li data-act="copy-user">Copiar usuario</li>
+    <li data-act="group">Mover a grupo…</li>
     <li data-act="afk">Activar/desactivar anti-AFK</li>
-    <li data-act="remove" class="danger">Eliminar</li>
+    <li class="sep"></li>
+    <li data-act="remove">Eliminar</li>
   </ul>
 
   <div id="toasts"></div>
