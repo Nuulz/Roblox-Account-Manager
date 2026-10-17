@@ -104,6 +104,9 @@ namespace RBX_Alt_Manager.Classes
         public Vector2 Size = new Vector2(880, 740), Position;
         public int Index = -1;
 
+        private bool CaptureLogin;
+        private string CapturedPassword = string.Empty;
+
         public AccountBrowser() { }
 
         public AccountBrowser(Account account, string Url = null, string Script = null, Func<BrowserPage, Task> PostNavigation = null)
@@ -136,6 +139,34 @@ namespace RBX_Alt_Manager.Classes
 
             if (PostPageCreation != null) try { await PostPageCreation(); } catch { }
 
+            if (CaptureLogin)
+            {
+                bool added = false;
+                core.SourceChanged += async (s, e) =>
+                {
+                    if (added) return;
+
+                    string current = core.Source;
+                    if (string.IsNullOrEmpty(current) || !current.Contains("/home")) return;
+
+                    try
+                    {
+                        var cookies = await core.CookieManager.GetCookiesAsync("https://www.roblox.com");
+                        var rsec = cookies.FirstOrDefault(x => x.Name == ".ROBLOSECURITY");
+
+                        if (rsec != null)
+                        {
+                            added = true;
+                            AccountManager.AddAccount(rsec.Value, CapturedPassword);
+                            host.InvokeIfRequired(() => host.Close());
+                        }
+                    }
+                    catch (Exception ex) { Program.Logger.Error($"[AccountBrowser] cookie capture failed: {ex}"); }
+                };
+
+                _ = WatchTypedPasswordAsync(host);
+            }
+
             host.Show();
             await host.NavigateAndWaitAsync(Url);
 
@@ -144,8 +175,28 @@ namespace RBX_Alt_Manager.Classes
             if (PostNavigation != null) try { await PostNavigation(page); } catch { }
         }
 
+        private async Task WatchTypedPasswordAsync(WebView2Host host)
+        {
+            while (host != null && !host.IsDisposed && host.Visible)
+            {
+                try
+                {
+                    string raw = await host.Core.ExecuteScriptAsync("(document.getElementById('login-password')||document.getElementById('signup-password')||{}).value || null");
+                    if (!string.IsNullOrEmpty(raw) && raw != "null")
+                        CapturedPassword = System.Text.Json.JsonSerializer.Deserialize<string>(raw);
+                }
+                catch { }
+
+                await Task.Delay(150);
+            }
+        }
+
         public async Task Login(string Username = "", string Password = "", string[] Arguments = null)
-            => await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, PostNavigation: async (page) => await LoginTask(page, Username, Password));
+        {
+            CaptureLogin = true;
+            CapturedPassword = Password ?? string.Empty;
+            await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, PostNavigation: async (page) => await LoginTask(page, Username, Password));
+        }
 
         public async Task LoginTask(BrowserPage page, string Username = "", string Password = "")
         {
