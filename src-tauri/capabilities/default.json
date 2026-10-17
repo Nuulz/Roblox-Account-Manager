@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Permisos de la ventana principal. Las ventanas de navegador por cuenta no reciben ninguno.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
