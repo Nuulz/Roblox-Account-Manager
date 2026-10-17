@@ -833,6 +833,20 @@ namespace RBX_Alt_Manager
                 RefreshView();
             }
 
+            AccountsView.UseCustomSelectionColors = true;
+            AccountsView.SelectedBackColor = ThemeEditor.Accent;
+            AccountsView.SelectedForeColor = Color.White;
+            AccountsView.FullRowSelect = true;
+            AccountsView.GridLines = false;
+
+            AccountsView.HeaderUsesThemes = false;
+            AccountsView.HeaderFormatStyle = new HeaderFormatStyle
+            {
+                Normal = new HeaderStateStyle { BackColor = ThemeEditor.FormsBackground, ForeColor = ThemeEditor.AccountForeground },
+                Hot = new HeaderStateStyle { BackColor = ThemeEditor.ButtonsBackground, ForeColor = Color.White },
+                Pressed = new HeaderStateStyle { BackColor = ThemeEditor.Accent, ForeColor = Color.White },
+            };
+
             AccountsView.HeaderStyle = ThemeEditor.ShowHeaders ? (AccountsView.ShowGroups ? ColumnHeaderStyle.Nonclickable : ColumnHeaderStyle.Clickable) : ColumnHeaderStyle.None;
             AccountsView.CellEditActivation = ObjectListView.CellEditActivateMode.DoubleClick;
 

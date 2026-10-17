@@ -9,28 +9,31 @@ namespace RBX_Alt_Manager.Forms
 {
     public partial class ThemeEditor : Form
     {
-        public static Color AccountBackground = SystemColors.Control;
-        public static Color AccountForeground = SystemColors.ControlText;
+        // Modern dark palette (mockup default)
+        public static Color Accent = ColorTranslator.FromHtml("#2B6CE6");
 
-        public static Color ButtonsBackground = SystemColors.Control;
-        public static Color ButtonsForeground = SystemColors.ControlText;
-        public static Color ButtonsBorder = SystemColors.Control;
-        public static FlatStyle ButtonStyle = FlatStyle.Standard;
+        public static Color AccountBackground = ColorTranslator.FromHtml("#0E1016");
+        public static Color AccountForeground = ColorTranslator.FromHtml("#E6E8EC");
 
-        public static Color FormsBackground = SystemColors.Control;
-        public static Color FormsForeground = SystemColors.ControlText;
+        public static Color ButtonsBackground = ColorTranslator.FromHtml("#1A1D27");
+        public static Color ButtonsForeground = ColorTranslator.FromHtml("#E6E8EC");
+        public static Color ButtonsBorder = ColorTranslator.FromHtml("#2A2E3A");
+        public static FlatStyle ButtonStyle = FlatStyle.Flat;
+
+        public static Color FormsBackground = ColorTranslator.FromHtml("#12141C");
+        public static Color FormsForeground = ColorTranslator.FromHtml("#E6E8EC");
         public static bool UseDarkTopBar = true;
         public static bool ShowHeaders = true;
 
-        public static Color TextBoxesBackground = SystemColors.Control;
-        public static Color TextBoxesForeground = SystemColors.ControlText;
-        public static Color TextBoxesBorder = Color.FromArgb(0x7A7A7A);
+        public static Color TextBoxesBackground = ColorTranslator.FromHtml("#1C1F2A");
+        public static Color TextBoxesForeground = ColorTranslator.FromHtml("#E6E8EC");
+        public static Color TextBoxesBorder = ColorTranslator.FromHtml("#2A2E3A");
 
-        public static Color LabelBackground = SystemColors.Control;
-        public static Color LabelForeground = SystemColors.ControlText;
+        public static Color LabelBackground = ColorTranslator.FromHtml("#12141C");
+        public static Color LabelForeground = ColorTranslator.FromHtml("#E6E8EC");
         public static bool LabelTransparent = true;
-        
-        public static bool LightImages = false;
+
+        public static bool LightImages = true;
         // public static bool UseNormalTabControls = false;
 
         public static string ToHexString(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
