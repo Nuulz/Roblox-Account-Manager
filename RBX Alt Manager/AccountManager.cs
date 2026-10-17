@@ -266,7 +266,8 @@ namespace RBX_Alt_Manager
         {
             AccountsView.InvokeIfRequired(() =>
             {
-                AccountsView.BuildList();
+                // the view keeps its own copy from SetObjects; BuildList alone never picks up added/removed accounts
+                AccountsView.SetObjects(AccountsList, true);
                 if (AccountsView.ShowGroups) AccountsView.BuildGroups();
 
                 if (obj != null)
@@ -591,32 +592,38 @@ namespace RBX_Alt_Manager
 
             if (account.Valid)
             {
-                account.Password = Password;
+                Account result = account;
 
-                Account exists = AccountsList.AsReadOnly().FirstOrDefault(acc => acc.UserID == account.UserID);
-
-                if (exists != null)
+                // validation may run off the UI thread; serialize list mutation there
+                Instance.InvokeIfRequired(() =>
                 {
-                    account = exists;
+                    account.Password = Password;
 
-                    exists.SecurityToken = SecurityToken;
-                    if (!string.IsNullOrEmpty(Password)) exists.Password = Password;
-                    exists.LastUse = DateTime.Now;
-                    exists.NeedsLogin = false;
-                    exists.Valid = true;
+                    Account exists = AccountsList.FirstOrDefault(acc => acc.UserID == account.UserID);
 
-                    Instance.RefreshView(exists);
-                }
-                else
-                {
-                    AccountsList.Add(account);
+                    if (exists != null)
+                    {
+                        result = exists;
 
-                    Instance.RefreshView(account);
-                }
+                        exists.SecurityToken = SecurityToken;
+                        if (!string.IsNullOrEmpty(Password)) exists.Password = Password;
+                        exists.LastUse = DateTime.Now;
+                        exists.NeedsLogin = false;
+                        exists.Valid = true;
 
-                SaveAccounts(true);
+                        Instance.RefreshView(exists);
+                    }
+                    else
+                    {
+                        AccountsList.Add(account);
 
-                return account;
+                        Instance.RefreshView(account);
+                    }
+
+                    SaveAccounts(true);
+                });
+
+                return result;
             }
 
             return null;
@@ -1264,6 +1271,8 @@ namespace RBX_Alt_Manager
                     if (!rbxMultiMutex.WaitOne(TimeSpan.Zero, true))
                         return false;
                 }
+                // previous instance was killed (e.g. by the updater) while holding it; we now own it
+                catch (AbandonedMutexException) { }
                 catch { return false; }
             else if (!Enabled && rbxMultiMutex != null)
             {

@@ -95,20 +95,48 @@ namespace RBX_Alt_Manager
         public Account(string Cookie, string AccountJSON = null)
         {
             SecurityToken = Cookie;
-            
-            AccountJSON ??= AccountManager.MainClient.Execute(MakeRequest("my/account/json", Method.Get)).Content;
 
-            if (!string.IsNullOrEmpty(AccountJSON) && Utilities.TryParseJson(AccountJSON, out AccountJson Data))
+            if (AccountJSON != null)
             {
-                Username = Data.Name;
-                UserID = Data.UserId;
-
-                Valid = true;
-
-                LastUse = DateTime.Now;
-
-                AccountManager.LastValidAccount = this;
+                if (Utilities.TryParseJson(AccountJSON, out AccountJson Data) && Data.UserId > 0)
+                    MarkValid(Data.UserId, Data.Name);
+                return;
             }
+
+            // my/account/json is legacy and heavily rate limited; adding several accounts in a row made it fail silently
+            for (int attempt = 0; attempt < 4 && !Valid; attempt++)
+            {
+                if (attempt > 0) System.Threading.Thread.Sleep(1500 * attempt);
+
+                RestResponse response = AccountManager.UsersClient.Execute(MakeRequest("v1/users/authenticated", Method.Get));
+
+                if (response.StatusCode == HttpStatusCode.OK && Utilities.TryParseJson(response.Content, out AuthenticatedUser User) && User.id > 0)
+                    MarkValid(User.id, User.name);
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    break;
+            }
+
+            if (!Valid)
+            {
+                string Legacy = AccountManager.MainClient.Execute(MakeRequest("my/account/json", Method.Get)).Content;
+                if (!string.IsNullOrEmpty(Legacy) && Utilities.TryParseJson(Legacy, out AccountJson Data) && Data.UserId > 0)
+                    MarkValid(Data.UserId, Data.Name);
+            }
+        }
+
+        private void MarkValid(long Id, string Name)
+        {
+            Username = Name;
+            UserID = Id;
+            Valid = true;
+            LastUse = DateTime.Now;
+            AccountManager.LastValidAccount = this;
+        }
+
+        private class AuthenticatedUser
+        {
+            public long id { get; set; }
+            public string name { get; set; }
         }
 
         public RestRequest MakeRequest(string url, Method method = Method.Get) => new RestRequest(url, method).AddCookie(".ROBLOSECURITY", SecurityToken, "/", ".roblox.com");

@@ -159,14 +159,15 @@ namespace RBX_Alt_Manager.Classes
             {
                 try { core.CookieManager.DeleteAllCookies(); } catch { }
 
-                bool added = false;
-                core.SourceChanged += async (s, e) =>
+                bool busy = false, added = false;
+                async Task TryCapture()
                 {
-                    if (added) return;
+                    if (busy || added) return;
 
                     string current = core.Source;
                     if (string.IsNullOrEmpty(current) || !current.Contains("/home")) return;
 
+                    busy = true;
                     try
                     {
                         var cookies = await core.CookieManager.GetCookiesAsync("https://www.roblox.com");
@@ -174,13 +175,27 @@ namespace RBX_Alt_Manager.Classes
 
                         if (rsec != null)
                         {
-                            added = true;
-                            AccountManager.AddAccount(rsec.Value, CapturedPassword);
-                            host.InvokeIfRequired(() => host.Close());
+                            string token = rsec.Value, password = CapturedPassword;
+                            Account result = await Task.Run(() => AccountManager.AddAccount(token, password));
+
+                            if (result != null)
+                            {
+                                added = true;
+                                host.InvokeIfRequired(() => host.Close());
+                            }
+                            else
+                            {
+                                Program.Logger.Error("[AccountBrowser] captured cookie but account validation failed");
+                                host.InvokeIfRequired(() => MessageBox.Show(host, "No se pudo agregar la cuenta (Roblox no respondió a tiempo).\nRecarga la página (F5) para reintentar.", "Roblox Account Manager", MessageBoxButtons.OK, MessageBoxIcon.Warning));
+                            }
                         }
                     }
                     catch (Exception ex) { Program.Logger.Error($"[AccountBrowser] cookie capture failed: {ex}"); }
-                };
+                    finally { busy = false; }
+                }
+
+                core.SourceChanged += async (s, e) => await TryCapture();
+                core.NavigationCompleted += async (s, e) => await TryCapture();
             }
 
             host.Show();
@@ -210,8 +225,11 @@ namespace RBX_Alt_Manager.Classes
             }
         }
 
-        public async Task Login(string Username = "", string Password = "", string[] Arguments = null, string ProfileKey = "_login")
+        public async Task Login(string Username = "", string Password = "", string[] Arguments = null, string ProfileKey = null)
         {
+            CleanupTempProfiles();
+            // a shared profile let concurrent/bulk logins clobber each other's session cookie
+            ProfileKey ??= "_login_" + Guid.NewGuid().ToString("N");
             CaptureLogin = true;
             CapturedPassword = Password ?? string.Empty;
             await LaunchBrowser("https://www.roblox.com/login", Arguments: Arguments, ProfileKey: ProfileKey,
@@ -220,6 +238,7 @@ namespace RBX_Alt_Manager.Classes
 
         public async Task Signup()
         {
+            CleanupTempProfiles();
             CaptureLogin = true;
             CapturedPassword = string.Empty;
             // fresh isolated profile + its own stable UA, same as a per-account login
@@ -245,6 +264,20 @@ namespace RBX_Alt_Manager.Classes
                 }
             }
             catch (Exception ex) { Program.Logger.Error($"An exception was caught while trying to automatically log in: {ex}"); }
+        }
+
+        private static void CleanupTempProfiles()
+        {
+            try
+            {
+                var baseDir = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "WebView2Data"));
+                if (!baseDir.Exists) return;
+
+                foreach (var dir in baseDir.GetDirectories())
+                    if ((dir.Name == "_login" || dir.Name.StartsWith("_login_") || dir.Name.StartsWith("_signup_")) && dir.LastWriteTime < DateTime.Now.AddHours(-1))
+                        try { dir.Delete(true); } catch { } // still locked by an open window
+            }
+            catch { }
         }
 
         private static string ProfileFolderFor(string key)
