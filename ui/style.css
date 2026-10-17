@@ -56,7 +56,7 @@ input.num { width: 56px; }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 th { position: sticky; top: 0; z-index: 1; background: var(--head); font-weight: normal; text-align: left; padding: 3px 6px; border-right: 1px solid var(--head-line); border-bottom: 1px solid var(--head-line); }
 .c-user { width: 42%; } .c-alias { width: 24%; }
-td { padding: 2px 6px; height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+td { padding: 2px 6px; height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 tr.acc:hover td { background: rgba(127,127,127,.13); }
 tr.acc.sel td { background: var(--sel); color: var(--sel-text); }
 tr.acc.sel .timer { color: #fff; }
@@ -138,3 +138,8 @@ legend { padding: 0 4px; color: var(--group); }
 ::-webkit-scrollbar-track { background: var(--list); }
 ::-webkit-scrollbar-thumb { background: var(--ctl-line); border: 4px solid var(--list); }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.av { display: inline-block; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; flex: none; background: var(--ctl); border: 1px solid var(--ctl-line); object-fit: cover; }
+tr.acc.sel .av { border-color: rgba(255,255,255,.7); }
+.cell { display: flex; align-items: center; min-width: 0; }
+.cell .nm { overflow: hidden; text-overflow: ellipsis; }
+.cell .dot, .cell .timer, .cell .afk { flex: none; }

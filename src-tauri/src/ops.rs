@@ -281,13 +281,14 @@ pub async fn update_presence(ids: Vec<i64>) {
     }
     let cookie = st().any_cookie();
     let Ok(list) = api().presence(&ids, cookie.as_deref()).await else { return };
+    let procs = tokio::task::spawn_blocking(process::roblox_processes).await.unwrap_or_default();
     {
         let mut accounts = st().accounts.write();
         for p in list {
             if let Some(a) = accounts.iter_mut().find(|a| a.user_id == p.user_id) {
                 if p.in_game() {
                     if a.rt.game_session_start.is_none() {
-                        a.rt.game_session_start = Some(Local::now());
+                        a.rt.game_session_start = Some(session_start_for(a, &procs));
                     }
                 } else {
                     a.rt.game_session_start = None;
@@ -297,6 +298,23 @@ pub async fn update_presence(ids: Vec<i64>) {
         }
     }
     st().emit_accounts();
+}
+
+/// Desde cuándo está en juego: hora de inicio de su Roblox (por BrowserTrackerId),
+/// o el último lanzamiento desde la app si no se encuentra el proceso.
+fn session_start_for(a: &Account, procs: &[process::RbxProcess]) -> chrono::DateTime<Local> {
+    use chrono::TimeZone;
+    let from_proc = procs
+        .iter()
+        .filter(|p| !a.browser_tracker_id.is_empty() && p.tracker_id == a.browser_tracker_id)
+        .map(|p| p.start_time)
+        .min()
+        .and_then(|t| Local.timestamp_opt(t as i64, 0).single());
+    if let Some(t) = from_proc {
+        return t;
+    }
+    let now = Local::now();
+    if (now - a.last_use).num_hours() < 12 { a.last_use } else { now }
 }
 
 pub async fn presence_loop() {

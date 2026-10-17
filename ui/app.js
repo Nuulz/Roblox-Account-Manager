@@ -127,7 +127,7 @@ function render() {
     <tr class="grp" data-group="${esc(g)}"><td colspan="3"><div class="gline">${esc(g)} <span class="n">(${list.length})</span><span class="caret">${collapsed.has(g) ? '▼' : '▲'}</span></div></td></tr>
     ${collapsed.has(g) ? '' : list.map((a) => `
     <tr class="acc ${selected.has(a.userId) ? 'sel' : ''}" data-id="${a.userId}">
-      <td title="${esc(dotTitle(a))}"><span class="dot ${dotClass(a)}"></span>${hide ? '••••••••' : esc(a.username)}${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}</td>
+      <td title="${esc(dotTitle(a))}"><span class="cell"><span class="dot ${dotClass(a)}"></span>${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>'}<span class="nm">${hide ? '••••••••' : esc(a.username)}</span>${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}</span></td>
       <td>${esc(a.alias)}</td>
       <td title="${esc(a.description)}">${esc(a.description)}</td>
     </tr>`).join('')}`).join('');
@@ -490,6 +490,7 @@ async function loadMain() {
   accounts = await invoke('accounts_list');
   syncToggles();
   showMulti();
+  invoke('accounts_refresh_avatars', { ids: accounts.map((a) => a.userId) });
   invoke('accounts_update_presence', { ids: accounts.map((a) => a.userId) });
   if (settings.general.checkForUpdates) checkUpdate(false);
 }
