@@ -4,6 +4,7 @@ mod crypto;
 mod games;
 mod ops;
 mod process;
+mod regions;
 mod roblox;
 mod settings;
 mod stats;
@@ -205,20 +206,8 @@ async fn servers_list(place_id: i64, cursor: String) -> CmdResult<roblox::Server
 }
 
 #[tauri::command]
-async fn server_region(place_id: i64, job_id: String) -> CmdResult<String> {
-    let cookie = st().any_cookie().ok_or("Hace falta al menos una cuenta válida")?;
-    let v = roblox::api().join_game_instance(&cookie, place_id, &job_id, false).await.map_err(ops::err)?;
-    let js = &v["joinScript"];
-    let ip = js["UdmuxEndpoints"][0]["Address"]
-        .as_str()
-        .or_else(|| js["MachineAddress"].as_str())
-        .ok_or_else(|| v["message"].as_str().unwrap_or("Roblox no devolvió la IP del servidor").to_string())?
-        .to_string();
-    let (fmt, api_url) = {
-        let g = &st().settings.read().general;
-        (g.server_region_format.clone(), g.ip_api_link.clone())
-    };
-    Ok(roblox::api().region_for_ip(&ip, &api_url, &fmt).await.unwrap_or(ip))
+async fn server_region(place_id: i64, job_id: String) -> CmdResult<regions::Region> {
+    regions::region(place_id, &job_id).await
 }
 
 // ─────────────────────────────────── juegos

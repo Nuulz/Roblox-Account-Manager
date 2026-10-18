@@ -463,7 +463,7 @@ async function loadRegion(jobId) {
   if (!cell || cell.dataset.done) return;
   cell.dataset.done = '1';
   cell.textContent = '…';
-  try { cell.textContent = await invoke('server_region', { placeId: Number($('srv-place').value.trim()), jobId }); }
+  try { cell.textContent = (await invoke('server_region', { placeId: Number($('srv-place').value.trim()), jobId })).label; }
   catch (e) { cell.textContent = '—'; cell.title = String(e); }
 }
 $('srv-regions').onclick = async () => {
