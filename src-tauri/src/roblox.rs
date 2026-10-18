@@ -944,4 +944,56 @@ impl Api {
                 .to_string(),
         )
     }
+
+    /// Descarga un archivo del CDN de Roblox por su hash, probando los servidores t0..t7.
+    async fn cdn_hash(&self, hash: &str) -> Result<Vec<u8>> {
+        if hash.starts_with("http") {
+            return Ok(self.http.get(hash).send().await?.error_for_status()?.bytes().await?.to_vec());
+        }
+        let mut h: u32 = 31;
+        for b in hash.bytes().take(38) {
+            h ^= b as u32;
+        }
+        let first = h % 8;
+        let hosts = (0..8).map(|k| format!("t{}", (first + k) % 8)).chain(["tr".to_string()]);
+        for host in hosts {
+            let url = format!("https://{host}.rbxcdn.com/{hash}");
+            if let Ok(resp) = self.http.get(&url).send().await {
+                if resp.status().is_success() {
+                    return Ok(resp.bytes().await?.to_vec());
+                }
+            }
+        }
+        bail!("No se pudo descargar {hash}")
+    }
+
+    /// Modelo 3D del avatar: obj, mtl y texturas (en base64) listos para dibujar.
+    pub async fn avatar_3d(&self, cookie: &str, user_id: i64) -> Result<Value> {
+        use base64::Engine;
+        let url = format!("https://thumbnails.roblox.com/v1/users/avatar-3d?userId={user_id}");
+        let mut meta: Value = Value::Null;
+        for _ in 0..8 {
+            meta = self.req(Method::GET, &url, Some(cookie)).send().await?.json().await?;
+            if meta["state"] == "Completed" {
+                break;
+            }
+            if meta["errors"].is_array() {
+                bail!("Roblox: {}", meta["errors"][0]["message"].as_str().unwrap_or("error"));
+            }
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+        }
+        let manifest_url = meta["imageUrl"].as_str().ok_or_else(|| anyhow!("Roblox aún no generó el modelo 3D ({})", meta["state"]))?;
+        let manifest: Value = self.http.get(manifest_url).send().await?.json().await?;
+        let obj = String::from_utf8_lossy(&self.cdn_hash(manifest["obj"].as_str().unwrap_or_default()).await?).into_owned();
+        let mtl = String::from_utf8_lossy(&self.cdn_hash(manifest["mtl"].as_str().unwrap_or_default()).await?).into_owned();
+        let mut textures = serde_json::Map::new();
+        for t in manifest["textures"].as_array().into_iter().flatten().filter_map(|t| t.as_str()) {
+            if let Ok(bytes) = self.cdn_hash(t).await {
+                let mime = if bytes.starts_with(&[0x89, b'P']) { "image/png" } else { "image/jpeg" };
+                let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                textures.insert(t.to_string(), json!(format!("data:{mime};base64,{b64}")));
+            }
+        }
+        Ok(json!({ "obj": obj, "mtl": mtl, "textures": textures, "camera": manifest["camera"], "aabb": manifest["aabb"] }))
+    }
 }

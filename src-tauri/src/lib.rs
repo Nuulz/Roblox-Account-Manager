@@ -6,10 +6,12 @@ mod ops;
 mod process;
 mod roblox;
 mod settings;
+mod stats;
 mod state;
 mod storage;
 mod updater;
 mod util;
+mod webserver;
 
 use ops::{CmdResult, JoinRequest};
 use state::st;
@@ -68,6 +70,86 @@ fn account_update(view: account::AccountPatch) -> CmdResult<()> {
     Ok(())
 }
 
+/// Datos sensibles para copiar al portapapeles. Nunca se envían en la lista normal.
+#[tauri::command]
+fn account_secret(user_id: i64, kind: String) -> CmdResult<String> {
+    let a = st().accounts.read().iter().find(|a| a.user_id == user_id).cloned().ok_or("Cuenta no encontrada")?;
+    Ok(match kind.as_str() {
+        "password" => a.password,
+        "cookie" => a.security_token,
+        "combo" => format!("{}:{}", a.username, a.password),
+        "combo-cookie" => format!("{}:{}:{}", a.username, a.password, a.security_token),
+        _ => return Err("Tipo desconocido".into()),
+    })
+}
+
+/// Utilidades de cuenta. `action` elige la operación y `args` lleva sus datos.
+#[tauri::command]
+async fn account_util(user_id: i64, action: String, args: serde_json::Value) -> CmdResult<serde_json::Value> {
+    use serde_json::json;
+    let api = roblox::api();
+    let cookie = st().cookie_of(user_id).ok_or("Cuenta no encontrada")?;
+    let arg = |k: &str| args[k].as_str().unwrap_or_default().to_string();
+    let set_cookie = |c: String| {
+        st().with_account(user_id, |a| a.security_token = c);
+        storage::save();
+    };
+    match action.as_str() {
+        "info" => {
+            let (robux, email, pin) =
+                tokio::join!(api.robux(&cookie, user_id), api.email_info(&cookie), api.pin_status(&cookie));
+            let (pin_on, pin_until) = pin.unwrap_or((false, 0));
+            Ok(json!({ "robux": robux, "email": email, "pinEnabled": pin_on, "pinUnlockedUntil": pin_until }))
+        }
+        "avatar3d" => api.avatar_3d(&cookie, user_id).await.map_err(ops::err),
+        "password" => {
+            let new = arg("new");
+            let c = api.change_password(&cookie, &arg("current"), &new).await.map_err(ops::err)?;
+            if let Some(c) = c {
+                set_cookie(c);
+            }
+            st().with_account(user_id, |a| a.password = new);
+            storage::save();
+            Ok(json!("Contraseña cambiada"))
+        }
+        "displayName" => {
+            api.set_display_name(&cookie, user_id, &arg("name")).await.map_err(ops::err)?;
+            st().with_account(user_id, |a| a.display_name = arg("name"));
+            st().emit_accounts();
+            Ok(json!("Nombre visible cambiado"))
+        }
+        "unlockPin" => api.unlock_pin(&cookie, &arg("pin")).await.map(|t| json!(t)).map_err(ops::err),
+        "quickLogin" => {
+            let code = arg("code");
+            let info = api.quick_login_enter(&cookie, &code).await.map_err(ops::err)?;
+            api.quick_login_validate(&cookie, &code).await.map_err(ops::err)?;
+            Ok(info)
+        }
+        "blocked" => api.blocked_list(&cookie).await.map_err(ops::err),
+        "unblock" => {
+            let id = args["userId"].as_i64().ok_or("userId inválido")?;
+            api.set_blocked(&cookie, id, false).await.map(|(_, m)| json!(m)).map_err(ops::err)
+        }
+        "signoutOthers" => {
+            if let Some(c) = api.signout_other_sessions(&cookie).await.map_err(ops::err)? {
+                set_cookie(c);
+            }
+            Ok(json!("Se cerraron las demás sesiones"))
+        }
+        _ => Err("Acción desconocida".into()),
+    }
+}
+
+#[tauri::command]
+fn accounts_trackers() -> std::collections::HashMap<i64, String> {
+    st().accounts.read().iter().map(|a| (a.user_id, a.browser_tracker_id.clone())).collect()
+}
+
+#[tauri::command]
+fn stats_get(user_id: i64) -> stats::StatsView {
+    stats::view(user_id)
+}
+
 #[tauri::command]
 async fn accounts_refresh_avatars(ids: Vec<i64>) {
     ops::refresh_avatars(ids).await;
@@ -123,10 +205,20 @@ async fn servers_list(place_id: i64, cursor: String) -> CmdResult<roblox::Server
 }
 
 #[tauri::command]
-async fn server_region(ip: String) -> String {
-    let fmt = st().settings.read().general.server_region_format.clone();
-    let api_url = st().settings.read().general.ip_api_link.clone();
-    roblox::api().region_for_ip(&ip, &api_url, &fmt).await.unwrap_or_default()
+async fn server_region(place_id: i64, job_id: String) -> CmdResult<String> {
+    let cookie = st().any_cookie().ok_or("Hace falta al menos una cuenta válida")?;
+    let v = roblox::api().join_game_instance(&cookie, place_id, &job_id, false).await.map_err(ops::err)?;
+    let js = &v["joinScript"];
+    let ip = js["UdmuxEndpoints"][0]["Address"]
+        .as_str()
+        .or_else(|| js["MachineAddress"].as_str())
+        .ok_or_else(|| v["message"].as_str().unwrap_or("Roblox no devolvió la IP del servidor").to_string())?
+        .to_string();
+    let (fmt, api_url) = {
+        let g = &st().settings.read().general;
+        (g.server_region_format.clone(), g.ip_api_link.clone())
+    };
+    Ok(roblox::api().region_for_ip(&ip, &api_url, &fmt).await.unwrap_or(ip))
 }
 
 // ─────────────────────────────────── juegos
@@ -190,6 +282,7 @@ fn settings_set(s: settings::Settings) -> CmdResult<()> {
     s.save();
     *st().settings.write() = s.clone();
     st().emit("settings", s);
+    webserver::apply();
     apply_process_settings()
 }
 
@@ -258,6 +351,11 @@ fn process_kill(pid: u32) {
 }
 
 #[tauri::command]
+fn window_minimize(hwnd: isize) {
+    process::minimize(hwnd);
+}
+
+#[tauri::command]
 fn window_close(hwnd: isize) {
     process::close_window(hwnd);
 }
@@ -297,6 +395,7 @@ fn init_log() {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             st().app.set(app.handle().clone()).ok();
             init_log();
@@ -317,11 +416,14 @@ pub fn run() {
                 log::warn!("{e}");
             }
 
+            webserver::apply();
+
             // Tareas de fondo
             tauri::async_runtime::spawn(ops::presence_loop());
             tauri::async_runtime::spawn(ops::session_loop());
             tauri::async_runtime::spawn(ops::cookie_refresh_loop());
             tauri::async_runtime::spawn(ops::anti_afk_loop());
+            tauri::async_runtime::spawn(stats::stats_loop());
 
             Ok(())
         })
@@ -337,6 +439,10 @@ pub fn run() {
             account_add,
             account_remove,
             account_update,
+            account_secret,
+            stats_get,
+            accounts_trackers,
+            account_util,
             accounts_refresh_avatars,
             accounts_update_presence,
             // lanzar
@@ -371,6 +477,7 @@ pub fn run() {
             processes_list,
             process_kill,
             window_close,
+            window_minimize,
             window_move,
             // utilidades
             roblox_version,

@@ -21,7 +21,6 @@ pub struct RbxProcess {
     pub cmd: String,
     pub start_time: u64,
     pub memory_mb: u64,
-    #[serde(skip)]
     pub hwnd: Option<isize>,
     pub title: String,
     pub tracker_id: String,

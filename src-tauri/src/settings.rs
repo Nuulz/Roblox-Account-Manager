@@ -236,7 +236,7 @@ impl Settings {
     pub fn load() -> Self {
         let path = data_path(SETTINGS_FILE);
         if let Ok(text) = std::fs::read_to_string(&path) {
-            match serde_json::from_str(&text) {
+            match serde_json::from_str(text.trim_start_matches('\u{feff}')) {
                 Ok(s) => return s,
                 Err(e) => log::error!("settings.json inválido, usando valores por defecto: {e}"),
             }

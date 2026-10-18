@@ -143,3 +143,26 @@ tr.acc.sel .av { border-color: rgba(255,255,255,.7); }
 .cell { display: flex; align-items: center; min-width: 0; }
 .cell .nm { overflow: hidden; text-overflow: ellipsis; }
 .cell .dot, .cell .timer, .cell .afk { flex: none; }
+
+.bar { position: relative; height: 16px; background: var(--ctl); border: 1px solid var(--ctl-line); }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--group-line); }
+.bar span { position: relative; padding-left: 4px; font-size: 11px; }
+table.srv tr.mine td { background: rgba(46, 204, 85, .12); }
+.mine-cell { color: var(--ok); }
+.mine-cell .av { width: 16px; height: 16px; margin-right: 3px; vertical-align: -4px; }
+button.lnk { border: none; background: none; color: var(--timer); text-decoration: underline; padding: 0; height: auto; }
+
+.upane { padding: 10px; }
+.stat-sum { display: flex; gap: 10px; margin-bottom: 10px; }
+.stat-sum div { flex: 1; border: 1px solid var(--ctl-line); background: var(--ctl); padding: 6px 10px; }
+.stat-sum b { display: block; font-size: 18px; color: var(--timer); }
+.stat-sum span { color: var(--muted); font-size: 11px; }
+.chart { display: flex; align-items: flex-end; gap: 2px; height: 70px; border-bottom: 1px solid var(--ctl-line); }
+.chart i { flex: 1; background: var(--sel); min-height: 0; }
+.chart i:hover { background: var(--ok); }
+.chart-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; margin: 2px 0 10px; }
+.avatar-host { width: 100%; height: calc(100% - 22px); min-height: 180px; }
+.avatar-host canvas { display: block; cursor: grab; }
+.avatar-msg { text-align: center; font-size: 11px; }
+#utab-avatar { padding: 0; overflow: hidden; }
+.bl { padding: 3px 0; border-bottom: 1px solid var(--head-line); }

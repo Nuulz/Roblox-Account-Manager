@@ -2,6 +2,25 @@ const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 const appWin = window.__TAURI__.window.getCurrentWindow();
 const $ = (id) => document.getElementById(id);
+const dialog = window.__TAURI__.dialog;
+
+function ask(title, text, { password = false, value = '' } = {}) {
+  return new Promise((resolve) => {
+    $('prompt-title').textContent = title;
+    $('prompt-text').textContent = text;
+    const inp = $('prompt-input');
+    inp.type = password ? 'password' : 'text';
+    inp.value = value;
+    open('dlg-prompt');
+    inp.focus();
+    const done = (v) => { close('dlg-prompt'); $('prompt-ok').onclick = $('prompt-cancel').onclick = inp.onkeydown = null; resolve(v); };
+    $('prompt-ok').onclick = () => done(inp.value);
+    $('prompt-cancel').onclick = () => done(null);
+    inp.onkeydown = (e) => { if (e.key === 'Enter') done(inp.value); if (e.key === 'Escape') done(null); };
+  });
+}
+
+const confirmBox = (msg) => dialog.ask(msg, { title: 'Roblox Account Manager', kind: 'warning', okLabel: 'Sí', cancelLabel: 'No' });
 
 let accounts = [];
 let settings = null;
@@ -203,11 +222,27 @@ document.addEventListener('click', () => close('ctx'));
 $('ctx').addEventListener('click', (e) => {
   const act = e.target.dataset.act;
   if (act === 'join') join();
-  else if (act === 'copy-user') navigator.clipboard.writeText(selectedAccounts().map((a) => a.username).join('\n'));
+  else if (act === 'copy-user') copy(selectedAccounts().map((a) => a.username));
+  else if (act?.startsWith('copy-')) copySecret(act.slice(5));
   else if (act === 'group') openGroup();
+  else if (act === 'util') openUtil();
   else if (act === 'afk') toggleAfk();
   else if (act === 'remove') removeSelected();
 });
+
+async function copy(lines) {
+  await navigator.clipboard.writeText(lines.join('\n'));
+  toast('success', lines.length === 1 ? 'Copiado' : `${lines.length} líneas copiadas`);
+}
+
+async function copySecret(kind) {
+  try {
+    const out = [];
+    for (const a of selectedAccounts()) out.push(await invoke('account_secret', { userId: a.userId, kind }));
+    if (kind === 'password' && out.every((p) => !p)) return toast('error', 'No hay contraseña guardada');
+    copy(out);
+  } catch (e) { toast('error', e); }
+}
 
 // ───────────────────────── acciones de cuenta
 
@@ -242,7 +277,7 @@ function openGroup() {
   open('dlg-group');
   $('group-name').focus();
 }
-$('btn-group').onclick = openGroup;
+
 $('group-ok').onclick = async () => {
   const group = $('group-name').value.trim() || 'Default';
   for (const a of selectedAccounts()) await update({ userId: a.userId, group });
@@ -253,7 +288,7 @@ $('group-name').onkeydown = (e) => e.key === 'Enter' && $('group-ok').click();
 async function removeSelected() {
   const sel = selectedAccounts();
   if (!sel.length) return;
-  if (!confirm(sel.length === 1 ? `¿Eliminar ${sel[0].username}?` : `¿Eliminar ${sel.length} cuentas?`)) return;
+  if (!await confirmBox(sel.length === 1 ? `¿Eliminar ${sel[0].username}?` : `¿Eliminar ${sel.length} cuentas?`)) return;
   for (const a of sel) await invoke('account_remove', { userId: a.userId });
   selected.clear();
   fillFields();
@@ -272,7 +307,45 @@ $('btn-save-game').onclick = async () => {
 // ───────────────────────── agregar
 
 function closeAdd() { close('dlg-add'); $('add-cookie').value = ''; $('add-pass').value = ''; $('add-err').textContent = ''; }
-$('btn-add').onclick = () => { open('dlg-add'); $('add-cookie').focus(); };
+$('btn-add').onclick = (e) => {
+  e.stopPropagation();
+  const r = e.target.getBoundingClientRect();
+  const m = $('add-menu');
+  m.classList.remove('hidden');
+  m.style.left = `${r.left}px`;
+  m.style.top = `${r.top - m.offsetHeight - 2}px`;
+};
+document.addEventListener('click', () => close('add-menu'));
+$('add-menu').addEventListener('click', (e) => {
+  const what = e.target.dataset.add;
+  if (what === 'cookie') { open('dlg-add'); $('add-cookie').focus(); }
+  if (what === 'import') importFile();
+  if (what === 'export') exportFile();
+});
+
+async function importFile() {
+  const path = await dialog.open({ title: 'Importar cuentas', filters: [{ name: 'Cuentas', extensions: ['json', 'dat'] }] });
+  if (!path) return;
+  let password = null;
+  for (;;) {
+    try {
+      const n = await invoke('storage_import', { path, password });
+      return toast('success', `${n} cuentas importadas`);
+    } catch (e) {
+      if (!String(e).toLowerCase().includes('contraseña')) return toast('error', e);
+      password = await ask('Importar cuentas', String(e), { password: true });
+      if (password === null) return;
+    }
+  }
+}
+
+async function exportFile() {
+  if (!await confirmBox('El archivo exportado NO va cifrado: incluye cookies y contraseñas en texto plano. ¿Continuar?')) return;
+  const path = await dialog.save({ title: 'Exportar cuentas', defaultPath: 'cuentas.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
+  if (!path) return;
+  try { toast('success', `${await invoke('storage_export', { path })} cuentas exportadas`); }
+  catch (e) { toast('error', e); }
+}
 $('add-cancel').onclick = closeAdd;
 $('add-ok').onclick = async () => {
   $('add-ok').disabled = true;
@@ -368,9 +441,16 @@ async function loadServers(more) {
     const page = await invoke('servers_list', { placeId, cursor: srvCursor ?? '' });
     srvCursor = page.nextCursor;
     $('srv-more').classList.toggle('hidden', !srvCursor);
-    $('srv-rows').insertAdjacentHTML('beforeend', page.data.map((s) => `
-      <tr><td>${s.playing}/${s.maxPlayers}</td><td>${s.ping}</td><td>${Math.round(s.fps)}</td>
-      <td class="mono">${esc(s.id)}</td><td><button data-job="${esc(s.id)}">Usar</button></td></tr>`).join(''));
+    $('srv-rows').insertAdjacentHTML('beforeend', page.data.map((s) => {
+      const mine = accounts.filter((a) => a.presenceType === 2 && a.gameId === s.id);
+      const pct = s.maxPlayers ? Math.round((s.playing / s.maxPlayers) * 100) : 0;
+      return `<tr class="${mine.length ? 'mine' : ''}" title="Job ID: ${esc(s.id)}">
+        <td><div class="bar"><i style="width:${pct}%"></i><span>${s.playing}/${s.maxPlayers}</span></div></td>
+        <td>${s.ping}</td><td>${Math.round(s.fps)}</td>
+        <td class="region" data-region="${esc(s.id)}"><button class="lnk" data-reg="${esc(s.id)}">ver</button></td>
+        <td class="mine-cell">${mine.map((a) => `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}`).join(', ')}</td>
+        <td><button data-job="${esc(s.id)}">Usar</button></td></tr>`;
+    }).join(''));
     $('srv-msg').textContent = `${$('srv-rows').children.length} servidores`;
   } catch (e) { $('srv-msg').textContent = e; }
 }
@@ -378,7 +458,20 @@ $('btn-servers').onclick = () => { open('dlg-servers'); $('srv-place').value ||=
 $('srv-load').onclick = () => loadServers(false);
 $('srv-more').onclick = () => loadServers(true);
 $('srv-place').onkeydown = (e) => e.key === 'Enter' && loadServers(false);
+async function loadRegion(jobId) {
+  const cell = document.querySelector(`[data-region="${CSS.escape(jobId)}"]`);
+  if (!cell || cell.dataset.done) return;
+  cell.dataset.done = '1';
+  cell.textContent = '…';
+  try { cell.textContent = await invoke('server_region', { placeId: Number($('srv-place').value.trim()), jobId }); }
+  catch (e) { cell.textContent = '—'; cell.title = String(e); }
+}
+$('srv-regions').onclick = async () => {
+  const cells = [...document.querySelectorAll('#srv-rows [data-region]')].filter((c) => !c.dataset.done).slice(0, 25);
+  for (const c of cells) { await loadRegion(c.dataset.region); await new Promise((r) => setTimeout(r, 350)); }
+};
 $('srv-rows').addEventListener('click', (e) => {
+  if (e.target.dataset.reg) return loadRegion(e.target.dataset.reg);
   const job = e.target.dataset.job;
   if (!job) return;
   $('place-id').value = $('srv-place').value.trim();
@@ -403,8 +496,8 @@ function renderGames() {
     </div>`).join('') : `<p class="muted" style="padding:8px">${gamesTab === 'recent' ? 'Aún no hay juegos recientes.' : 'Marca juegos con ☆ en Recientes.'}</p>`;
 }
 $('btn-games').onclick = async () => { games = await invoke('games_list'); renderGames(); open('dlg-games'); };
-document.querySelectorAll('.tab').forEach((t) => t.onclick = () => {
-  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+document.querySelectorAll('.tab:not(.utab)').forEach((t) => t.onclick = () => {
+  document.querySelectorAll('.tab:not(.utab)').forEach((x) => x.classList.toggle('on', x === t));
   gamesTab = t.dataset.tab;
   renderGames();
 });
@@ -426,12 +519,167 @@ $('games-list').addEventListener('click', async (e) => {
 });
 listen('games', (e) => { games = e.payload; renderGames(); });
 
+// ───────────────────────── utilidades de cuenta
+
+let utilAcc = null;
+let avatarFor = null;
+const hm = (secs) => { const m = Math.round(secs / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+
+function showUtab(name) {
+  document.querySelectorAll('.utab').forEach((t) => t.classList.toggle('on', t.dataset.utab === name));
+  document.querySelectorAll('.upane').forEach((p) => p.classList.toggle('hidden', p.id !== `utab-${name}`));
+  if (name === 'avatar') loadAvatar();
+  if (name === 'account') loadAccInfo();
+}
+document.querySelectorAll('.utab').forEach((t) => t.onclick = () => showUtab(t.dataset.utab));
+
+function openUtil() {
+  const a = needOne();
+  if (!a) return;
+  utilAcc = a;
+  avatarFor = null;
+  window.avatar3d?.dispose();
+  $('util-title').textContent = `Utilidades de cuenta: ${a.alias || a.username}`;
+  $('dn-name').value = a.displayName || '';
+  ['pw-cur', 'pw-new', 'pin-code', 'ql-code'].forEach((id) => { $(id).value = ''; });
+  $('bl-list').innerHTML = '';
+  $('bl-msg').textContent = '';
+  open('dlg-util');
+  loadStats();
+  showUtab('stats');
+}
+$('btn-util').onclick = openUtil;
+new MutationObserver(() => { if ($('dlg-util').classList.contains('hidden')) { window.avatar3d?.dispose(); avatarFor = null; } })
+  .observe($('dlg-util'), { attributes: true, attributeFilter: ['class'] });
+
+async function loadStats() {
+  const s = await invoke('stats_get', { userId: utilAcc.userId });
+  $('st-total').textContent = hm(s.total);
+  $('st-week').textContent = hm(s.week);
+  $('st-sessions').textContent = s.sessions;
+  const max = Math.max(60, ...s.days.map(([, v]) => v));
+  $('st-chart').innerHTML = s.days.map(([d, v]) => `<i style="height:${Math.max(v ? 3 : 0, (v / max) * 100)}%" title="${d}: ${hm(v)}"></i>`).join('');
+  $('st-games').innerHTML = s.games.length ? s.games.map((g) => `<tr><td>${esc(g.name || g.placeId)}</td><td>${hm(g.seconds)}</td><td class="muted">${g.lastPlayed ? new Date(g.lastPlayed).toLocaleDateString() : ''}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">Todavía no hay datos. Se registran mientras la app está abierta y la cuenta está en juego.</td></tr>';
+}
+
+async function loadAvatar() {
+  if (avatarFor === utilAcc.userId) return;
+  avatarFor = utilAcc.userId;
+  window.avatar3d?.dispose();
+  $('avatar-msg').textContent = 'Generando modelo 3D…';
+  try {
+    const data = await invoke('account_util', { userId: utilAcc.userId, action: 'avatar3d', args: {} });
+    if (avatarFor !== utilAcc.userId) return;
+    $('avatar-msg').textContent = 'Arrastra para girar · rueda para acercar';
+    window.avatar3d.render($('avatar-host'), data);
+  } catch (e) { $('avatar-msg').textContent = String(e); avatarFor = null; }
+}
+
+async function util(action, args = {}) {
+  return invoke('account_util', { userId: utilAcc.userId, action, args });
+}
+async function utilDo(btn, action, args, ok) {
+  btn.disabled = true;
+  try { const r = await util(action, args); toast('success', ok ?? (typeof r === 'string' ? r : 'Hecho')); return r; }
+  catch (e) { toast('error', e); }
+  finally { btn.disabled = false; }
+}
+
+async function loadAccInfo() {
+  $('acc-info').textContent = 'Cargando…';
+  try {
+    const i = await util('info');
+    const pin = !i.pinEnabled ? 'sin PIN' : i.pinUnlockedUntil > 0 ? 'PIN desbloqueado' : 'PIN activo';
+    let email = i.email || '?';
+    try {
+      const e = JSON.parse(i.email);
+      email = e.emailAddress ? `${e.emailAddress}${e.verified ? ' (verificado)' : ' (sin verificar)'}` : 'sin correo';
+    } catch {}
+    $('acc-info').textContent = `Robux: ${i.robux ?? '?'} · Correo: ${email} · ${pin}`;
+  } catch (e) { $('acc-info').textContent = String(e); }
+}
+
+$('pw-go').onclick = (e) => {
+  if (!$('pw-cur').value || !$('pw-new').value) return toast('error', 'Escribe la contraseña actual y la nueva');
+  utilDo(e.target, 'password', { current: $('pw-cur').value, new: $('pw-new').value });
+};
+$('dn-go').onclick = (e) => utilDo(e.target, 'displayName', { name: $('dn-name').value.trim() });
+$('pin-go').onclick = (e) => utilDo(e.target, 'unlockPin', { pin: $('pin-code').value.trim() }, 'PIN desbloqueado').then(loadAccInfo);
+$('ql-go').onclick = (e) => utilDo(e.target, 'quickLogin', { code: $('ql-code').value.trim() }, 'Inicio de sesión aprobado');
+$('so-go').onclick = async (e) => {
+  if (await confirmBox('¿Cerrar la sesión de esta cuenta en todos los demás dispositivos?')) utilDo(e.target, 'signoutOthers');
+};
+$('bl-load').onclick = async () => {
+  $('bl-msg').textContent = 'Cargando…';
+  try {
+    const v = await util('blocked');
+    const list = v.blockedUsers ?? (v.data?.blockedUserIds ?? []).map((id) => ({ userId: id }));
+    $('bl-msg').textContent = `${list.length} bloqueado(s)`;
+    $('bl-list').innerHTML = list.map((u) => `<div class="r-row bl"><span class="grow">${esc(u.displayName || u.name || '')} <span class="muted">${esc(u.name ? '@' + u.name : u.userId)}</span></span><button data-unblock="${u.userId}">Desbloquear</button></div>`).join('');
+  } catch (e) { $('bl-msg').textContent = String(e); }
+};
+$('bl-list').addEventListener('click', async (e) => {
+  const id = Number(e.target.dataset.unblock);
+  if (id && await utilDo(e.target, 'unblock', { userId: id }, 'Desbloqueado') !== undefined) e.target.closest('.bl').remove();
+});
+
+// ───────────────────────── procesos
+
+let procsTimer = null;
+function duration(secs) {
+  const m = Math.floor(secs / 60);
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+}
+async function loadProcs() {
+  if ($('dlg-procs').classList.contains('hidden')) { clearInterval(procsTimer); return; }
+  const list = await invoke('processes_list');
+  const now = Date.now() / 1000;
+  const total = list.reduce((n, p) => n + p.memoryMb, 0);
+  $('procs-sum').textContent = `${list.length} abierto(s) · ${total} MB en total`;
+  $('procs-rows').innerHTML = list.length ? list.map((p) => {
+    const a = accounts.find((x) => x.userId && p.trackerId && accountsTracker[x.userId] === p.trackerId);
+    const name = a ? `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}` : `<span class="muted">${esc(p.title || 'Desconocida')}</span>`;
+    return `<tr><td><span class="cell">${name}</span></td><td>${p.pid}</td><td>${p.memoryMb} MB</td><td>${duration(now - p.startTime)}</td>
+      <td>${p.hwnd ? `<button data-pmin="${p.hwnd}">Minimizar</button> <button data-pclose="${p.hwnd}">Cerrar</button> ` : ''}<button data-pkill="${p.pid}">Matar</button></td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">No hay ningún Roblox abierto.</td></tr>';
+}
+let accountsTracker = {};
+$('btn-procs').onclick = async () => {
+  accountsTracker = await invoke('accounts_trackers');
+  open('dlg-procs');
+  loadProcs();
+  clearInterval(procsTimer);
+  procsTimer = setInterval(loadProcs, 3000);
+};
+$('procs-rows').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  if (d.pmin) await invoke('window_minimize', { hwnd: Number(d.pmin) });
+  if (d.pclose) await invoke('window_close', { hwnd: Number(d.pclose) });
+  if (d.pkill && await confirmBox('¿Forzar el cierre de este Roblox?')) await invoke('process_kill', { pid: Number(d.pkill) });
+  setTimeout(loadProcs, 600);
+});
+$('procs-min-all').onclick = async () => {
+  for (const p of await invoke('processes_list')) if (p.hwnd) await invoke('window_minimize', { hwnd: p.hwnd });
+};
+$('procs-close-all').onclick = async () => {
+  if (!await confirmBox('¿Cerrar todas las ventanas de Roblox?')) return;
+  for (const p of await invoke('processes_list')) if (p.hwnd) await invoke('window_close', { hwnd: p.hwnd });
+  setTimeout(loadProcs, 1000);
+};
+
 // ───────────────────────── diálogo de ajustes
 
+function settingSlot(el) {
+  if (el.dataset.k) return [settings.general, el.dataset.k];
+  if (el.dataset.w) return [settings.watcher, el.dataset.w];
+  return [settings.webServer, el.dataset.ws];
+}
 $('btn-settings').onclick = async () => {
   settings = await invoke('settings_get');
-  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w]').forEach((el) => {
-    const v = el.dataset.k ? settings.general[el.dataset.k] : settings.watcher[el.dataset.w];
+  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w], #dlg-settings [data-ws]').forEach((el) => {
+    const [obj, key] = settingSlot(el);
+    const v = obj[key];
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   });
   $('set-err').textContent = '';
@@ -439,10 +687,14 @@ $('btn-settings').onclick = async () => {
   open('dlg-settings');
 };
 $('set-save').onclick = async () => {
-  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w]').forEach((el) => {
-    const v = el.type === 'checkbox' ? el.checked : Number(el.value);
-    if (el.dataset.k) settings.general[el.dataset.k] = v; else settings.watcher[el.dataset.w] = v;
+  document.querySelectorAll('#dlg-settings [data-k], #dlg-settings [data-w], #dlg-settings [data-ws]').forEach((el) => {
+    const [obj, key] = settingSlot(el);
+    obj[key] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
   });
+  const ws = settings.webServer;
+  if (ws.enabled && ws.password.length < 6 && (ws.allowGetCookie || ws.allowGetAccounts || ws.allowLaunchAccount)) {
+    toast('error', 'El servidor web necesita una contraseña de al menos 6 caracteres para esos permisos');
+  }
   try {
     await invoke('settings_set', { s: settings });
     close('dlg-settings');
