@@ -1278,6 +1278,58 @@ $('vip-list').addEventListener('click', async (e) => {
 });
 $('rows').addEventListener('click', () => { if (!$('dlg-vips').classList.contains('hidden')) vipSelText(); });
 
+// ───────────────────────── grupos de Roblox
+
+let grData = null;
+
+async function loadGroups(ids) {
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+  ['gr-all', 'gr-sel'].forEach((id) => { $(id).disabled = true; });
+  $('gr-msg').textContent = T('Leyendo los grupos de {n} cuenta(s)…', { n: ids.length });
+  try {
+    grData = await invoke('groups_overview', { ids });
+    renderGroups();
+    if (grData.failed.length) toast('error', T('No se pudieron leer los grupos de {n} cuenta(s)', { n: grData.failed.length }));
+  } catch (e) { $('gr-msg').textContent = T(String(e)); }
+  finally { ['gr-all', 'gr-sel'].forEach((id) => { $(id).disabled = false; }); }
+}
+
+function renderGroups() {
+  if (!grData) { $('gr-list').innerHTML = `<p class="muted" style="padding:8px">${esc(T('Pulsa "Cargar" para ver en qué grupos están tus cuentas.'))}</p>`; $('gr-msg').textContent = ''; return; }
+  const q = $('gr-filter').value.trim().toLowerCase();
+  const shared = $('gr-shared').checked;
+  const list = grData.groups.filter((g) => (!q || g.name.toLowerCase().includes(q)) && (!shared || g.members.length > 1));
+  const owned = grData.groups.filter((g) => g.members.some((m) => m.owner)).length;
+  $('gr-msg').textContent = T('{n} grupo(s) · {s} en común · {o} tuyos', { n: grData.groups.length, s: grData.groups.filter((g) => g.members.length > 1).length, o: owned })
+    + (list.length !== grData.groups.length ? ` · ${T('mostrando {n}', { n: list.length })}` : '');
+  $('gr-list').innerHTML = list.map((g) => `
+    <div class="grp-card">
+      ${g.icon ? `<img src="${esc(g.icon)}" alt="" loading="lazy">` : '<div class="noimg"></div>'}
+      <div class="info">
+        <b title="${esc(g.name)}">${esc(g.name)}${g.verified ? ` <span class="sub">(${esc(T('verificado'))})</span>` : ''}</b>
+        <div class="sub">${esc(T('{n} miembros', { n: fmt(g.memberCount) }))} · ${esc(T(g.publicEntry ? 'Entrada libre' : 'Con solicitud'))} · ID ${g.id}</div>
+        <div class="mems">${g.members.map((m) => {
+          const a = accounts.find((x) => x.userId === m.userId);
+          return `<span class="mem ${m.owner ? 'owner' : ''}" title="${esc(T('Rango {r}', { r: m.rank }))}">${avImg(a)}${esc(a ? (a.alias || a.username) : m.userId)} <span class="rk">${esc(m.owner ? T('Dueño') : m.role)}</span></span>`;
+        }).join('')}</div>
+      </div>
+      <div class="acts">
+        <button data-gopen="${g.id}" data-guser="${g.members[0].userId}">${esc(T('Abrir'))}</button>
+        <button data-gcopy="${g.id}">${esc(T('Copiar ID'))}</button>
+      </div>
+    </div>`).join('') || `<p class="muted" style="padding:8px">${esc(T('Ningún grupo coincide.'))}</p>`;
+}
+
+$('btn-groups').onclick = () => { renderGroups(); open('dlg-groups'); };
+$('gr-all').onclick = () => loadGroups(accounts.map((a) => a.userId));
+$('gr-sel').onclick = () => loadGroups(orderedIds().filter((id) => selected.has(id)));
+$('gr-filter').oninput = $('gr-shared').onchange = renderGroups;
+$('gr-list').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  if (d.gopen) invoke('browser_open', { userId: Number(d.guser), path: `/communities/${d.gopen}` }).catch((err) => toast('error', T(String(err))));
+  if (d.gcopy) { await navigator.clipboard.writeText(d.gcopy); toast('success', T('Copiado')); }
+});
+
 // ───────────────────────── idioma
 
 $('lang-sel').value = LANG;

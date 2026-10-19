@@ -270,3 +270,18 @@ button.tool span { font-weight: 600; }
 .vip .info span { color: var(--muted); font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vip button.go { border-color: var(--sel); color: var(--timer); }
 .vip.editing { border-color: var(--sel); }
+
+.gr-list { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.grp-card { border: 1px solid var(--ctl-line); background: var(--ctl); padding: 6px 8px; display: flex; gap: 8px; align-items: flex-start; }
+.grp-card img, .grp-card .noimg { width: 44px; height: 44px; flex: none; background: var(--list); object-fit: cover; }
+.grp-card .info { flex: 1; min-width: 0; }
+.grp-card .info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.grp-card .sub { color: var(--muted); font-size: 11px; }
+.grp-card .mems { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mem { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--ctl-line); background: var(--list); padding: 1px 6px 1px 2px; font-size: 11px; }
+.mem .av { width: 16px; height: 16px; margin: 0; }
+.mem .rk { color: var(--muted); }
+.mem.owner { border-color: var(--studio); }
+.mem.owner .rk { color: var(--studio); }
+.grp-card .acts { display: flex; flex-direction: column; gap: 4px; }
+.grp-card .acts button { height: 22px; }

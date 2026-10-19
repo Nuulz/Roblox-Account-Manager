@@ -3,6 +3,7 @@ mod browser;
 mod clientsettings;
 mod crypto;
 mod games;
+mod groups;
 mod health;
 mod ops;
 mod process;
@@ -447,6 +448,13 @@ fn health_cancel() {
     health::cancel();
 }
 
+// ─────────────────────────────────── grupos de Roblox
+
+#[tauri::command]
+async fn groups_overview(ids: Vec<i64>) -> CmdResult<groups::Overview> {
+    groups::overview(ids).await
+}
+
 // ─────────────────────────────────── servidores privados
 
 #[tauri::command]
@@ -627,6 +635,8 @@ pub fn run() {
             health_check,
             health_last,
             health_cancel,
+            // grupos
+            groups_overview,
             // servidores privados
             vips_list,
             vip_resolve,

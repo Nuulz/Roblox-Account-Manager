@@ -382,6 +382,27 @@ const I18N_EN = {
   'La cuenta usada para leer el enlace no tiene sesión válida': 'The account used to read the link does not have a valid session',
   'Servidor no encontrado': 'Server not found',
 
+  // grupos
+  'Grupos y rangos de tus cuentas': 'Groups and ranks of your accounts',
+  'Grupos de Roblox': 'Roblox groups',
+  'Cargar todas las cuentas': 'Load all accounts',
+  'Cargar selección': 'Load selection',
+  'Filtrar por nombre de grupo': 'Filter by group name',
+  'Solo grupos en común': 'Only shared groups',
+  'Leyendo los grupos de {n} cuenta(s)…': 'Reading the groups of {n} account(s)…',
+  'No se pudieron leer los grupos de {n} cuenta(s)': "Couldn't read the groups of {n} account(s)",
+  'Pulsa "Cargar" para ver en qué grupos están tus cuentas.': 'Press "Load" to see which groups your accounts are in.',
+  '{n} grupo(s) · {s} en común · {o} tuyos': '{n} group(s) · {s} shared · {o} owned',
+  'mostrando {n}': 'showing {n}',
+  '{n} miembros': '{n} members',
+  'Entrada libre': 'Open to join',
+  'Con solicitud': 'Request to join',
+  'Rango {r}': 'Rank {r}',
+  'Dueño': 'Owner',
+  'Abrir': 'Open',
+  'Copiar ID': 'Copy ID',
+  'Ningún grupo coincide.': 'No group matches.',
+
   // mensajes fijos del backend
   'Contraseña cambiada': 'Password changed',
   'Correo cambiado; Roblox enviará un mensaje para verificarlo': 'Email changed; Roblox will send a message to verify it',

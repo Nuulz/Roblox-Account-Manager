@@ -491,6 +491,37 @@ impl Api {
         None
     }
 
+    /// Grupos de un usuario con su rol en cada uno. Es público: no necesita cookie.
+    pub async fn user_groups(&self, user_id: i64) -> Result<Vec<Value>> {
+        let url = format!("https://groups.roblox.com/v1/users/{user_id}/groups/roles?includeLocked=false");
+        let resp = self.req(Method::GET, &url, None).send().await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("Roblox no devolvió los grupos [{}]: {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body)?;
+        Ok(v["data"].as_array().cloned().unwrap_or_default())
+    }
+
+    pub async fn group_icons(&self, ids: &[i64]) -> HashMap<i64, String> {
+        let mut out = HashMap::new();
+        for chunk in ids.chunks(50) {
+            let list = chunk.iter().map(i64::to_string).collect::<Vec<_>>().join(",");
+            let url = format!("https://thumbnails.roblox.com/v1/groups/icons?groupIds={list}&size=150x150&format=Png&isCircular=false");
+            if let Ok(resp) = self.req(Method::GET, &url, None).send().await {
+                if let Ok(v) = resp.json::<Value>().await {
+                    for d in v["data"].as_array().into_iter().flatten() {
+                        if let (Some(id), Some(img)) = (d["targetId"].as_i64(), d["imageUrl"].as_str()) {
+                            out.insert(id, img.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
     /// Resuelve un enlace `roblox.com/share?code=...&type=Server` a (placeId, privateServerLinkCode).
     pub async fn resolve_server_share_link(&self, cookie: &str, code: &str) -> Result<(i64, String)> {
         let resp = self
