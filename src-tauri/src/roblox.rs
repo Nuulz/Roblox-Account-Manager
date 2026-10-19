@@ -521,13 +521,19 @@ impl Api {
 
     /// (pin activado, desbloqueado hasta en segundos)
     pub async fn pin_status(&self, cookie: &str) -> Result<(bool, i64)> {
-        let v: Value = self
+        let resp = self
             .req(Method::GET, "https://auth.roblox.com/v1/account/pin/", Some(cookie))
             .header(REFERER, "https://www.roblox.com/")
             .send()
-            .await?
-            .json()
             .await?;
+        // Sin esta comprobación, un 401 (cookie vencida) devuelve un JSON de error
+        // sin `isEnabled`, que se interpretaría como "PIN desactivado" en vez de fallo.
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("[{}] No se pudo leer el estado del PIN. {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body)?;
         Ok((v["isEnabled"].as_bool().unwrap_or(false), v["unlockedUntil"].as_i64().unwrap_or(0)))
     }
 
