@@ -1456,6 +1456,31 @@ $('fr-list').addEventListener('click', (e) => {
 
 // ───────────────────────── buscar usuarios
 
+function renderProfile(p) {
+  const sec = (title, body) => `<div class="psec"><div class="pt">${esc(title)}</div>${body}</div>`;
+  const none = `<span class="muted">${esc(T('Ninguno'))}</span>`;
+  const date = (iso) => new Date(iso).toLocaleDateString(LANG === 'en' ? 'en-US' : 'es-ES');
+  const games = (list) => (list.length ? `<div class="pgames">${list.map((g) => `
+    <button class="pgame" data-pgame="${g.placeId ?? ''}" data-pname="${esc(g.name)}" title="${esc(T('Usar en el Lanzador'))}">
+      ${g.icon ? `<img src="${esc(g.icon)}" alt="" loading="lazy">` : '<i></i>'}<span>${esc(g.name)}</span><small>${esc(T('{n} visitas', { n: compact(g.visits) }))}</small>
+    </button>`).join('')}</div>` : none);
+  const lim = p.limiteds;
+  const out = [
+    `<div class="pline">${esc(T('Amigos: {f} · Seguidores: {s} · Siguiendo: {g}', { f: p.friends ?? '?', s: p.followers ?? '?', g: p.following ?? '?' }))}`
+      + (p.created ? ` · ${esc(T('Cuenta creada: {d}', { d: date(p.created) }))}` : '')
+      + (p.banned ? ` · <span class="err">${esc(T('Cuenta suspendida'))}</span>` : '') + '</div>',
+    sec(T('Nombres anteriores'), p.previousNames.length ? p.previousNames.map((n) => `<span class="mem">${esc(n)}</span>`).join(' ') : none),
+    sec(T('Insignias de Roblox'), p.badges.length ? `<div class="pbadges">${p.badges.map((b) => `<span class="mem" title="${esc(b.description || '')}">${b.image ? `<img src="${esc(b.image)}" alt="">` : ''}${esc(b.name)}</span>`).join('')}</div>` : none),
+    sec(T('Grupos ({n})', { n: p.groups.length }), p.groups.length ? `<div class="via">${p.groups.map((g) => `<span class="mem ${g.owner ? 'owner' : ''}" title="${esc(T('{n} miembros', { n: fmt(g.members) }))}">${esc(g.name)} <span class="rk">${esc(g.owner ? T('Dueño') : g.role)}${g.primary ? ` · ${esc(T('principal'))}` : ''}</span></span>`).join('')}</div>` : none),
+    sec(T('Limiteds'), !lim ? `<span class="muted">${esc(T('No se pudo leer'))}</span>` : lim.private ? `<span class="muted">${esc(T('Inventario privado'))}</span>`
+      : esc(T(lim.more ? '{n}+ limiteds · RAP de los primeros 100: {rap}' : '{n} limiteds · RAP {rap}', { n: lim.count, rap: fmt(lim.rap) }))),
+    sec(T('Juegos favoritos'), games(p.favorites)),
+    sec(T('Juegos creados'), games(p.createdGames)),
+  ];
+  if (p.description) out.push(sec(T('Descripción'), `<div class="pdesc">${esc(p.description)}</div>`));
+  return out.join('');
+}
+
 let usResults = [];
 const presLabel = (u) => {
   if (u.presence === 2) return T(u.location ? 'En juego: {game}' : 'En juego', { game: u.location });
@@ -1488,7 +1513,7 @@ function renderUsers() {
         <b>${esc(u.displayName)}${u.mine ? `<span class="mine">${esc(T('tu cuenta'))}</span>` : ''}</b>
         <div class="sub">@${esc(u.name)}${u.verified ? ` (${esc(T('verificado'))})` : ''} · ID ${u.id}</div>
         <div class="sub"><span class="pres p${u.presence}"><i></i>${esc(presLabel(u))}</span></div>
-        <div class="prof hidden" id="us-prof-${u.id}"></div>
+        <div class="uprof hidden" id="us-prof-${u.id}"></div>
       </div>
       <div class="acts">
         <button class="go" data-ufollow="${u.id}">${esc(T('Seguir a su juego'))}</button>
@@ -1502,8 +1527,9 @@ $('btn-users').onclick = () => { usSelText(); open('dlg-users'); $('us-q').focus
 $('us-go').onclick = searchUsers;
 $('us-q').onkeydown = (e) => e.key === 'Enter' && searchUsers();
 $('us-list').addEventListener('click', async (e) => {
-  const d = e.target.dataset;
-  const u = usResults.find((x) => x.id === Number(d.ufollow || d.uprof || d.uopen));
+  const d = e.target.closest('[data-pgame]')?.dataset ?? e.target.dataset;
+  if (d.pgame !== undefined && !d.pgame) return;
+  const u = d.pgame ? {} : usResults.find((x) => x.id === Number(d.ufollow || d.uprof || d.uopen));
   if (!u) return;
   if (d.ufollow) {
     const ids = orderedIds().filter((id) => selected.has(id) && id !== u.id);
@@ -1520,14 +1546,17 @@ $('us-list').addEventListener('click', async (e) => {
     box.textContent = T('Cargando…');
     box.classList.remove('hidden');
     try {
-      const p = await invoke('user_profile', { userId: u.id });
-      box.textContent = [
-        T('Amigos: {f} · Seguidores: {s} · Siguiendo: {g}', { f: p.friends ?? '?', s: p.followers ?? '?', g: p.following ?? '?' }),
-        p.created ? T('Cuenta creada: {d}', { d: new Date(p.created).toLocaleDateString(LANG === 'en' ? 'en-US' : 'es-ES') }) : '',
-        p.banned ? T('Cuenta suspendida') : '',
-        p.description ? `\n${p.description}` : '',
-      ].filter(Boolean).join('\n');
+      box.innerHTML = renderProfile(await invoke('user_profile', { userId: u.id }));
     } catch (err) { box.textContent = T(String(err)); }
+  }
+  if (d.pgame) {
+    $('place-id').value = d.pgame;
+    $('job-id').value = '';
+    lookupGame();
+    close('dlg-users');
+    document.querySelector('[data-rtab=launch]').click();
+    toast('success', T('Juego listo en el Lanzador: {name}', { name: d.pname }));
+    return;
   }
   if (d.uopen) {
     const via = orderedIds().find((id) => selected.has(id)) ?? accounts[0]?.userId;

@@ -291,11 +291,10 @@ table.inv td:first-child img, table.inv td:first-child .noimg { width: 36px; hei
 .hold { font-size: 10px; color: var(--studio); }
 .us-list { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
 .us { border: 1px solid var(--ctl-line); background: var(--ctl); padding: 6px 8px; display: flex; gap: 8px; align-items: flex-start; }
-.us img, .us .noimg { width: 56px; height: 56px; flex: none; background: var(--list); object-fit: cover; border-radius: 50%; }
+.us > img, .us > .noimg { width: 56px; height: 56px; flex: none; background: var(--list); object-fit: cover; border-radius: 50%; }
 .us .info { flex: 1; min-width: 0; }
 .us .info b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .us .sub { color: var(--muted); font-size: 11px; }
-.us .prof { margin-top: 4px; font-size: 11px; white-space: pre-wrap; max-height: 80px; overflow: auto; }
 .us .acts { display: flex; flex-direction: column; gap: 4px; }
 .us .acts button { height: 22px; }
 .us .acts button.go { border-color: var(--sel); color: var(--timer); }
@@ -304,3 +303,15 @@ table.inv td:first-child img, table.inv td:first-child .noimg { width: 36px; hei
 .pres.p1 i { background: var(--online); } .pres.p2 i { background: var(--ok); } .pres.p3 i { background: var(--studio); }
 .us .mine { font-size: 10px; color: var(--timer); border: 1px solid var(--timer); padding: 0 4px; margin-left: 4px; }
 .us .via { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.us .uprof { font-size: 12px; border: 1px solid var(--ctl-line); background: var(--list); padding: 6px 8px; margin-top: 6px; }
+.psec { margin-top: 6px; }
+.psec .pt { color: var(--group); font-size: 11px; margin-bottom: 2px; }
+.pline { font-size: 11px; }
+.pbadges { display: flex; flex-wrap: wrap; gap: 4px; }
+.pbadges img { width: 18px; height: 18px; }
+.pgames { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+button.pgame { height: auto; width: 96px; flex: none; padding: 3px; display: flex; flex-direction: column; align-items: stretch; gap: 1px; white-space: normal; text-align: left; }
+button.pgame img, button.pgame i { width: 100%; aspect-ratio: 1; display: block; background: var(--ctl); }
+button.pgame span { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.pgame small { font-size: 10px; color: var(--muted); }
+.pdesc { white-space: pre-wrap; max-height: 90px; overflow: auto; font-size: 11px; }

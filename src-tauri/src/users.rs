@@ -83,13 +83,96 @@ pub async fn search(keyword: &str) -> CmdResult<Vec<Found>> {
         .collect())
 }
 
-/// Datos de perfil: descripción, fecha de creación, amigos y seguidores.
+/// Juegos de una lista v2 de games.roblox.com (favoritos o creados), con icono.
+async fn game_list(url: &str) -> Vec<Value> {
+    let Ok(v) = api().public_json(url).await else { return Vec::new() };
+    let raw = v["data"].as_array().cloned().unwrap_or_default();
+    let ids: Vec<i64> = raw.iter().filter_map(|g| g["id"].as_i64()).collect();
+    let icons = api().universe_icons(&ids).await;
+    raw.iter()
+        .filter_map(|g| {
+            let universe = g["id"].as_i64()?;
+            Some(serde_json::json!({
+                "universeId": universe,
+                "placeId": g["rootPlace"]["id"].as_i64(),
+                "name": g["name"].as_str().unwrap_or_default(),
+                "visits": g["placeVisits"].as_i64().unwrap_or(0),
+                "icon": icons.get(&universe).cloned().unwrap_or_default(),
+            }))
+        })
+        .collect()
+}
+
+/// Limiteds de la primera página (hasta 100): suficiente para un resumen del perfil.
+async fn limiteds_summary(id: i64) -> Value {
+    match api().can_view_inventory(id).await {
+        Ok(false) => return serde_json::json!({ "private": true }),
+        Err(_) => return Value::Null,
+        Ok(true) => {}
+    }
+    match api().collectibles_page(id, None).await {
+        Ok((items, next)) => serde_json::json!({
+            "private": false,
+            "count": items.len(),
+            "more": next.is_some(),
+            "rap": items.iter().filter_map(|i| i["recentAveragePrice"].as_i64()).sum::<i64>(),
+        }),
+        Err(_) => Value::Null,
+    }
+}
+
+/// Perfil completo con datos públicos: si una parte falla, el resto se muestra igual.
 pub async fn profile(id: i64) -> CmdResult<Value> {
     let base = format!("https://friends.roblox.com/v1/users/{id}");
     let (fr, fo, fg) = (format!("{base}/friends/count"), format!("{base}/followers/count"), format!("{base}/followings/count"));
-    let (info, friends, followers, following) =
-        tokio::join!(api().user_info(id), api().count(&fr), api().count(&fo), api().count(&fg));
+    let history_url = format!("https://users.roblox.com/v1/users/{id}/username-history?limit=50&sortOrder=Desc");
+    let badges_url = format!("https://accountinformation.roblox.com/v1/users/{id}/roblox-badges");
+    let primary_url = format!("https://groups.roblox.com/v1/users/{id}/groups/primary/role");
+    let fav_url = format!("https://games.roblox.com/v2/users/{id}/favorite/games?limit=10");
+    let made_url = format!("https://games.roblox.com/v2/users/{id}/games?limit=10&sortOrder=Desc");
+    let (info, friends, followers, following, history, badges, primary, groups, favorites, created, limiteds) = tokio::join!(
+        api().user_info(id),
+        api().count(&fr),
+        api().count(&fo),
+        api().count(&fg),
+        api().public_json(&history_url),
+        api().public_json(&badges_url),
+        api().public_json(&primary_url),
+        api().user_groups(id),
+        game_list(&fav_url),
+        game_list(&made_url),
+        limiteds_summary(id),
+    );
     let info = info.map_err(ops::err)?;
+    let previous: Vec<String> = history
+        .ok()
+        .and_then(|v| v["data"].as_array().cloned())
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|n| n["name"].as_str().map(str::to_string))
+        .collect();
+    let badges: Vec<Value> = badges
+        .ok()
+        .and_then(|v| v.as_array().cloned())
+        .unwrap_or_default()
+        .iter()
+        .map(|b| serde_json::json!({ "name": b["name"], "image": b["imageUrl"], "description": b["description"] }))
+        .collect();
+    let primary_id = primary.ok().and_then(|v| v["group"]["id"].as_i64());
+    let groups: Vec<Value> = groups
+        .unwrap_or_default()
+        .iter()
+        .map(|g| {
+            serde_json::json!({
+                "id": g["group"]["id"],
+                "name": g["group"]["name"],
+                "members": g["group"]["memberCount"],
+                "role": g["role"]["name"],
+                "primary": g["group"]["id"].as_i64().is_some() && g["group"]["id"].as_i64() == primary_id,
+                "owner": g["group"]["owner"]["userId"].as_i64() == Some(id),
+            })
+        })
+        .collect();
     Ok(serde_json::json!({
         "id": id,
         "description": info["description"].as_str().unwrap_or_default(),
@@ -98,5 +181,11 @@ pub async fn profile(id: i64) -> CmdResult<Value> {
         "friends": friends,
         "followers": followers,
         "following": following,
+        "previousNames": previous,
+        "badges": badges,
+        "groups": groups,
+        "favorites": favorites,
+        "createdGames": created,
+        "limiteds": limiteds,
     }))
 }

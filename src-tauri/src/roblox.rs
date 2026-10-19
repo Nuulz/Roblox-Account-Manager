@@ -567,6 +567,17 @@ impl Api {
         Ok(v["data"].as_array().cloned().unwrap_or_default())
     }
 
+    /// GET público a una API de Roblox; error si el estado no es 2xx.
+    pub async fn public_json(&self, url: &str) -> Result<Value> {
+        let resp = self.req(Method::GET, url, None).send().await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("[{}] {}", status.as_u16(), error_message(&body));
+        }
+        Ok(serde_json::from_str(&body)?)
+    }
+
     /// Cantidad simple de un endpoint `{ "count": n }` (amigos, seguidores…).
     pub async fn count(&self, url: &str) -> Option<i64> {
         let v: Value = self.req(Method::GET, url, None).send().await.ok()?.json().await.ok()?;

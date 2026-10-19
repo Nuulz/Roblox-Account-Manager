@@ -462,6 +462,21 @@ const I18N_EN = {
   'Ningún amigo conectado ahora mismo.': 'No friends online right now.',
   'Ningún amigo coincide.': 'No friend matches.',
 
+  // perfil ampliado
+  'Ninguno': 'None',
+  'Nombres anteriores': 'Previous usernames',
+  'Insignias de Roblox': 'Roblox badges',
+  'Grupos ({n})': 'Groups ({n})',
+  'principal': 'primary',
+  'No se pudo leer': "Couldn't read",
+  '{n}+ limiteds · RAP de los primeros 100: {rap}': '{n}+ limiteds · RAP of the first 100: {rap}',
+  '{n} limiteds · RAP {rap}': '{n} limiteds · RAP {rap}',
+  'Juegos favoritos': 'Favorite games',
+  'Juegos creados': 'Created games',
+  'Descripción': 'Description',
+  'Usar en el Lanzador': 'Use in the Launcher',
+  '{n} visitas': '{n} visits',
+
   // mensajes fijos del backend
   'Contraseña cambiada': 'Password changed',
   'Correo cambiado; Roblox enviará un mensaje para verificarlo': 'Email changed; Roblox will send a message to verify it',
