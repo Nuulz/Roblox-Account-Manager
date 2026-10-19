@@ -4,6 +4,7 @@ mod clientsettings;
 mod crypto;
 mod games;
 mod groups;
+mod inventory;
 mod health;
 mod ops;
 mod process;
@@ -15,6 +16,7 @@ mod stats;
 mod state;
 mod storage;
 mod updater;
+mod users;
 mod util;
 mod vips;
 mod webserver;
@@ -448,6 +450,23 @@ fn health_cancel() {
     health::cancel();
 }
 
+// ─────────────────────────────────── inventario y usuarios
+
+#[tauri::command]
+async fn inventory_overview(ids: Vec<i64>) -> CmdResult<inventory::Overview> {
+    inventory::overview(ids).await
+}
+
+#[tauri::command]
+async fn users_search(keyword: String) -> CmdResult<Vec<users::Found>> {
+    users::search(&keyword).await
+}
+
+#[tauri::command]
+async fn user_profile(user_id: i64) -> CmdResult<serde_json::Value> {
+    users::profile(user_id).await
+}
+
 // ─────────────────────────────────── grupos de Roblox
 
 #[tauri::command]
@@ -635,6 +654,10 @@ pub fn run() {
             health_check,
             health_last,
             health_cancel,
+            // inventario y usuarios
+            inventory_overview,
+            users_search,
+            user_profile,
             // grupos
             groups_overview,
             // servidores privados

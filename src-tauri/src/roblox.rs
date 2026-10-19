@@ -491,6 +491,77 @@ impl Api {
         None
     }
 
+    /// Una página de coleccionables (limiteds). Vacía si el inventario es privado.
+    pub async fn collectibles_page(&self, user_id: i64, cursor: Option<&str>) -> Result<(Vec<Value>, Option<String>)> {
+        let mut url = format!("https://inventory.roblox.com/v1/users/{user_id}/assets/collectibles?limit=100&sortOrder=Asc");
+        if let Some(c) = cursor.filter(|c| !c.is_empty()) {
+            url.push_str(&format!("&cursor={}", urlencoding::encode(c)));
+        }
+        let resp = self.req(Method::GET, &url, None).send().await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("Roblox no devolvió el inventario [{}]: {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body)?;
+        let next = v["nextPageCursor"].as_str().filter(|c| !c.is_empty()).map(str::to_string);
+        Ok((v["data"].as_array().cloned().unwrap_or_default(), next))
+    }
+
+    pub async fn can_view_inventory(&self, user_id: i64) -> Result<bool> {
+        let url = format!("https://inventory.roblox.com/v1/users/{user_id}/can-view-inventory");
+        let v: Value = self.req(Method::GET, &url, None).send().await?.json().await?;
+        v["canView"].as_bool().ok_or_else(|| anyhow!("Respuesta inesperada de Roblox"))
+    }
+
+    async fn thumbnails(&self, kind: &str, param: &str, ids: &[i64], size: &str) -> HashMap<i64, String> {
+        let mut out = HashMap::new();
+        for chunk in ids.chunks(100) {
+            let list = chunk.iter().map(i64::to_string).collect::<Vec<_>>().join(",");
+            let url = format!("https://thumbnails.roblox.com/v1/{kind}?{param}={list}&size={size}&format=Png&isCircular=false");
+            if let Ok(resp) = self.req(Method::GET, &url, None).send().await {
+                if let Ok(v) = resp.json::<Value>().await {
+                    for d in v["data"].as_array().into_iter().flatten() {
+                        if let (Some(id), Some(img)) = (d["targetId"].as_i64(), d["imageUrl"].as_str()) {
+                            out.insert(id, img.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    pub async fn asset_icons(&self, ids: &[i64]) -> HashMap<i64, String> {
+        self.thumbnails("assets", "assetIds", ids, "150x150").await
+    }
+
+    pub async fn headshots_big(&self, ids: &[i64]) -> HashMap<i64, String> {
+        self.thumbnails("users/avatar-headshot", "userIds", ids, "150x150").await
+    }
+
+    /// Busca usuarios por texto (nombre o nombre visible).
+    pub async fn search_users(&self, keyword: &str) -> Result<Vec<Value>> {
+        let url = format!("https://users.roblox.com/v1/users/search?keyword={}&limit=10", urlencoding::encode(keyword));
+        let resp = self.req(Method::GET, &url, None).send().await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            bail!("Roblox está limitando las búsquedas; espera unos segundos");
+        }
+        if !status.is_success() {
+            bail!("La búsqueda falló [{}]: {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body)?;
+        Ok(v["data"].as_array().cloned().unwrap_or_default())
+    }
+
+    /// Cantidad simple de un endpoint `{ "count": n }` (amigos, seguidores…).
+    pub async fn count(&self, url: &str) -> Option<i64> {
+        let v: Value = self.req(Method::GET, url, None).send().await.ok()?.json().await.ok()?;
+        v["count"].as_i64()
+    }
+
     /// Grupos de un usuario con su rol en cada uno. Es público: no necesita cookie.
     pub async fn user_groups(&self, user_id: i64) -> Result<Vec<Value>> {
         let url = format!("https://groups.roblox.com/v1/users/{user_id}/groups/roles?includeLocked=false");

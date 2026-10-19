@@ -158,6 +158,8 @@
             <button class="tool" data-proxy="btn-add"><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
             <button class="tool" data-proxy="btn-settings"><span>Ajustes</span><small>Multi Roblox, API</small></button>
             <button class="tool" id="btn-health"><span>Salud y Robux</span><small>Cookies vencidas y Robux totales</small></button>
+            <button class="tool" id="btn-inv"><span>Inventario y limiteds</span><small>Valor RAP de tus cuentas</small></button>
+            <button class="tool" id="btn-users"><span>Buscar usuarios</span><small>Ver perfiles y seguirlos</small></button>
             <button class="tool" id="btn-groups"><span>Grupos Roblox</span><small>Grupos y rangos de tus cuentas</small></button>
             <button class="tool" id="btn-vips"><span>Servidores privados</span><small>Guardar enlaces y unirse</small></button>
             <button class="tool" id="btn-profiles"><span>Perfiles</span><small>Lanzar grupos de cuentas</small></button>
@@ -237,6 +239,41 @@
       </div>
       <div id="find-list" class="scroll find-list"></div>
       <div class="actions"><button id="find-more" class="hidden">Más resultados</button></div>
+    </div>
+  </div>
+
+  <div id="dlg-inv" class="overlay hidden">
+    <div class="card big wide">
+      <h2>Inventario y limiteds <button class="close" data-close="dlg-inv">✕</button></h2>
+      <div class="stat-sum hl-sum">
+        <div><b id="inv-rap">—</b><span>Valor RAP total</span></div>
+        <div><b id="inv-count">—</b><span>Limiteds</span></div>
+        <div><b id="inv-accs">—</b><span>Cuentas con limiteds</span></div>
+        <div><b id="inv-priv">—</b><span>Inventario privado</span></div>
+      </div>
+      <div class="r-row">
+        <button id="inv-all" class="primary">Cargar todas las cuentas</button><button id="inv-sel">Cargar selección</button>
+        <input id="inv-filter" class="grow" placeholder="Filtrar por nombre del objeto">
+        <select id="inv-acc"></select>
+      </div>
+      <div class="r-row"><span id="inv-msg" class="grow muted"></span></div>
+      <div class="scroll">
+        <table class="inv"><thead><tr><th style="width:44px"></th><th>Objeto</th><th style="width:150px">Cuenta</th><th style="width:90px">RAP</th><th style="width:80px">Serie</th><th style="width:90px"></th></tr></thead><tbody id="inv-rows"></tbody></table>
+      </div>
+      <p class="muted hl-note">RAP es el precio medio de las últimas ventas según Roblox; es una referencia, no un precio garantizado. Solo se ven los inventarios públicos.</p>
+    </div>
+  </div>
+
+  <div id="dlg-users" class="overlay hidden">
+    <div class="card big wide">
+      <h2>Buscar usuarios de Roblox <button class="close" data-close="dlg-users">✕</button></h2>
+      <div class="r-row">
+        <input id="us-q" class="grow" placeholder="Nombre de usuario, nombre visible o ID">
+        <button id="us-go" class="primary">Buscar</button>
+      </div>
+      <div class="r-row"><span id="us-sel" class="grow muted"></span></div>
+      <div id="us-list" class="scroll us-list"></div>
+      <p class="muted hl-note">Seguir a un usuario solo funciona si está en un juego y su privacidad permite que tus cuentas se unan (normalmente, que sean amigos). Roblox no siempre muestra en qué juego está.</p>
     </div>
   </div>
 

@@ -1330,6 +1330,150 @@ $('gr-list').addEventListener('click', async (e) => {
   if (d.gcopy) { await navigator.clipboard.writeText(d.gcopy); toast('success', T('Copiado')); }
 });
 
+// ───────────────────────── inventario y limiteds
+
+let invData = null;
+
+async function loadInventory(ids) {
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+  ['inv-all', 'inv-sel'].forEach((id) => { $(id).disabled = true; });
+  $('inv-msg').textContent = T('Leyendo el inventario de {n} cuenta(s)… puede tardar un poco.', { n: ids.length });
+  try { invData = await invoke('inventory_overview', { ids }); renderInventory(); }
+  catch (e) { $('inv-msg').textContent = T(String(e)); }
+  finally { ['inv-all', 'inv-sel'].forEach((id) => { $(id).disabled = false; }); }
+}
+
+function renderInventory() {
+  const accSel = $('inv-acc');
+  if (!invData) {
+    ['inv-rap', 'inv-count', 'inv-accs', 'inv-priv'].forEach((id) => { $(id).textContent = '—'; });
+    accSel.innerHTML = `<option value="">${esc(T('Todas las cuentas'))}</option>`;
+    $('inv-rows').innerHTML = `<tr><td colspan="6" class="muted">${esc(T('Pulsa "Cargar" para ver los limiteds de tus cuentas.'))}</td></tr>`;
+    $('inv-msg').textContent = '';
+    return;
+  }
+  const keep = accSel.value;
+  const accs = invData.accounts;
+  accSel.innerHTML = `<option value="">${esc(T('Todas las cuentas'))}</option>` + accs.filter((x) => x.items.length)
+    .map((x) => { const a = accounts.find((y) => y.userId === x.userId); return `<option value="${x.userId}">${esc(a ? accName(a) : x.userId)} · ${fmt(x.rap)}</option>`; }).join('');
+  if ([...accSel.options].some((o) => o.value === keep)) accSel.value = keep;
+  $('inv-rap').textContent = fmt(accs.reduce((n, x) => n + x.rap, 0));
+  $('inv-count').textContent = fmt(accs.reduce((n, x) => n + x.items.length, 0));
+  $('inv-accs').textContent = accs.filter((x) => x.items.length).length;
+  $('inv-priv').textContent = accs.filter((x) => x.private).length;
+  const q = $('inv-filter').value.trim().toLowerCase();
+  const only = Number(accSel.value) || null;
+  const rows = accs.flatMap((x) => x.items.map((it) => ({ it, uid: x.userId })))
+    .filter(({ it, uid }) => (!only || uid === only) && (!q || it.name.toLowerCase().includes(q)))
+    .sort((p, r) => r.it.rap - p.it.rap);
+  const problems = accs.filter((x) => x.error || x.truncated);
+  $('inv-msg').textContent = T('{n} objeto(s) mostrados', { n: rows.length })
+    + (problems.length ? ` · ${T('{n} cuenta(s) con datos incompletos', { n: problems.length })}` : '');
+  $('inv-rows').innerHTML = rows.slice(0, 500).map(({ it, uid }) => {
+    const a = accounts.find((y) => y.userId === uid);
+    const icon = invData.icons[it.assetId];
+    return `<tr>
+      <td>${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : '<div class="noimg"></div>'}</td>
+      <td title="${esc(it.name)}">${esc(it.name)}${it.onHold ? ` <span class="hold">${esc(T('en espera'))}</span>` : ''}</td>
+      <td><span class="cell">${avImg(a)}<span class="nm">${esc(a ? (a.alias || a.username) : uid)}</span></span></td>
+      <td class="num">${fmt(it.rap)}</td>
+      <td class="muted">${it.serial != null ? `#${it.serial}${it.stock ? ` / ${fmt(it.stock)}` : ''}` : ''}</td>
+      <td><button data-iopen="${it.assetId}" data-iuser="${uid}">${esc(T('Ver'))}</button></td></tr>`;
+  }).join('') || `<tr><td colspan="6" class="muted">${esc(T('Ningún limited coincide.'))}</td></tr>`;
+}
+
+$('btn-inv').onclick = () => { renderInventory(); open('dlg-inv'); };
+$('inv-all').onclick = () => loadInventory(accounts.map((a) => a.userId));
+$('inv-sel').onclick = () => loadInventory(orderedIds().filter((id) => selected.has(id)));
+$('inv-filter').oninput = $('inv-acc').onchange = renderInventory;
+$('inv-rows').addEventListener('click', (e) => {
+  const d = e.target.dataset;
+  if (d.iopen) invoke('browser_open', { userId: Number(d.iuser), path: `/catalog/${d.iopen}` }).catch((err) => toast('error', T(String(err))));
+});
+
+// ───────────────────────── buscar usuarios
+
+let usResults = [];
+const presLabel = (u) => {
+  if (u.presence === 2) return T(u.location ? 'En juego: {game}' : 'En juego', { game: u.location });
+  return { 0: T('Desconectado'), 1: T('En línea'), 3: T('En Studio') }[u.presence] ?? T('Estado desconocido');
+};
+
+function usSelText() {
+  const n = selected.size;
+  $('us-sel').textContent = n ? T('"Seguir" usará las {n} cuenta(s) seleccionadas en la lista.', { n }) : T('Selecciona cuentas en la lista para seguir a alguien con ellas.');
+}
+
+async function searchUsers() {
+  const q = $('us-q').value.trim();
+  if (!q) return $('us-q').focus();
+  $('us-go').disabled = true;
+  $('us-list').innerHTML = `<p class="muted" style="padding:8px">${esc(T('Buscando…'))}</p>`;
+  try {
+    usResults = await invoke('users_search', { keyword: q });
+    renderUsers();
+  } catch (e) { $('us-list').innerHTML = `<p class="err" style="padding:8px">${esc(T(String(e)))}</p>`; }
+  finally { $('us-go').disabled = false; }
+}
+
+function renderUsers() {
+  usSelText();
+  $('us-list').innerHTML = usResults.map((u) => `
+    <div class="us" data-uid="${u.id}">
+      ${u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : '<div class="noimg"></div>'}
+      <div class="info">
+        <b>${esc(u.displayName)}${u.mine ? `<span class="mine">${esc(T('tu cuenta'))}</span>` : ''}</b>
+        <div class="sub">@${esc(u.name)}${u.verified ? ` (${esc(T('verificado'))})` : ''} · ID ${u.id}</div>
+        <div class="sub"><span class="pres p${u.presence}"><i></i>${esc(presLabel(u))}</span></div>
+        <div class="prof hidden" id="us-prof-${u.id}"></div>
+      </div>
+      <div class="acts">
+        <button class="go" data-ufollow="${u.id}">${esc(T('Seguir a su juego'))}</button>
+        <button data-uprof="${u.id}">${esc(T('Ver perfil'))}</button>
+        <button data-uopen="${u.id}">${esc(T('Abrir en Roblox'))}</button>
+      </div>
+    </div>`).join('') || `<p class="muted" style="padding:8px">${esc(T('No se encontraron usuarios.'))}</p>`;
+}
+
+$('btn-users').onclick = () => { usSelText(); open('dlg-users'); $('us-q').focus(); };
+$('us-go').onclick = searchUsers;
+$('us-q').onkeydown = (e) => e.key === 'Enter' && searchUsers();
+$('us-list').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  const u = usResults.find((x) => x.id === Number(d.ufollow || d.uprof || d.uopen));
+  if (!u) return;
+  if (d.ufollow) {
+    const ids = orderedIds().filter((id) => selected.has(id) && id !== u.id);
+    if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+    if (u.presence === 0 && !await confirmBox(T('{name} aparece desconectado. ¿Intentar seguirlo igualmente?', { name: u.name }))) return;
+    if (ids.length > 1 && !await confirmBox(T('¿Seguir a {name} con {n} cuentas? Se abrirán {n} Roblox.', { name: u.name, n: ids.length }))) return;
+    launch(ids, { placeId: u.id, jobId: '', followUser: true, joinVip: false });
+    toast('info', T('Siguiendo a {name}…', { name: u.name }));
+    close('dlg-users');
+  }
+  if (d.uprof) {
+    const box = $(`us-prof-${u.id}`);
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+    box.textContent = T('Cargando…');
+    box.classList.remove('hidden');
+    try {
+      const p = await invoke('user_profile', { userId: u.id });
+      box.textContent = [
+        T('Amigos: {f} · Seguidores: {s} · Siguiendo: {g}', { f: p.friends ?? '?', s: p.followers ?? '?', g: p.following ?? '?' }),
+        p.created ? T('Cuenta creada: {d}', { d: new Date(p.created).toLocaleDateString(LANG === 'en' ? 'en-US' : 'es-ES') }) : '',
+        p.banned ? T('Cuenta suspendida') : '',
+        p.description ? `\n${p.description}` : '',
+      ].filter(Boolean).join('\n');
+    } catch (err) { box.textContent = T(String(err)); }
+  }
+  if (d.uopen) {
+    const via = orderedIds().find((id) => selected.has(id)) ?? accounts[0]?.userId;
+    if (!via) return toast('error', T('Agrega al menos una cuenta'));
+    invoke('browser_open', { userId: via, path: `/users/${u.id}/profile` }).catch((err) => toast('error', T(String(err))));
+  }
+});
+$('rows').addEventListener('click', () => { if (!$('dlg-users').classList.contains('hidden')) usSelText(); });
+
 // ───────────────────────── idioma
 
 $('lang-sel').value = LANG;
