@@ -228,6 +228,7 @@ $('ctx').addEventListener('click', (e) => {
     if (sel.length > 3) toast('info', T('Se abren solo las 3 primeras cuentas seleccionadas'));
     sel.slice(0, 3).forEach((a) => invoke('browser_open', { userId: a.userId }).catch((err) => toast('error', err)));
   }
+  else if (act === 'relogin') relogin();
   else if (act === 'copy-user') copy(selectedAccounts().map((a) => a.username));
   else if (act?.startsWith('copy-')) copySecret(act.slice(5));
   else if (act === 'group') openGroup();
@@ -324,7 +325,7 @@ $('btn-add').onclick = (e) => {
 document.addEventListener('click', () => close('add-menu'));
 $('add-menu').addEventListener('click', (e) => {
   const what = e.target.dataset.add;
-  if (what === 'login') invoke('browser_login').then(() => toast('info', T('Inicia sesión en la ventana nueva; la cuenta se agregará sola.'))).catch((err) => toast('error', err));
+  if (what === 'login') invoke('browser_login', { userId: null }).then(() => toast('info', T('Inicia sesión en la ventana nueva; la cuenta se agregará sola.'))).catch((err) => toast('error', err));
   if (what === 'cookie') { open('dlg-add'); $('add-cookie').focus(); }
   if (what === 'import') importFile();
   if (what === 'export') exportFile();
@@ -845,6 +846,28 @@ $('fr-go').onclick = (e) => {
   utilDo(e.target, 'friend', { targetId: id });
 };
 showAccount(null);
+
+// ───────────────────────── volver a iniciar sesión con datos guardados
+
+async function relogin() {
+  const sel = selectedAccounts();
+  if (sel.length !== 1) return toast('error', T('Solo se puede rellenar una cuenta a la vez'));
+  const a = sel[0];
+  if (!a.hasPassword) return toast('error', T('Esta cuenta no tiene contraseña guardada'));
+  const warn = [
+    T('Se abrirá el login de Roblox con el usuario y la contraseña de {name} ya escritos.', { name: a.username }),
+    '',
+    T('• Tú tienes que pulsar "Iniciar sesión" y resolver el captcha o la verificación si aparece.'),
+    T('• Hazlo solo con tus propias cuentas y no lo repitas muchas veces seguidas: Roblox puede bloquear temporalmente los inicios de sesión o pedir verificación.'),
+    T('• Los datos solo se rellenan en www.roblox.com/login.'),
+    '',
+    T('¿Continuar?'),
+  ].join('\n');
+  if (!await confirmBox(warn)) return;
+  invoke('browser_login', { userId: a.userId })
+    .then(() => toast('info', T('Pulsa "Iniciar sesión" en la ventana nueva; la cuenta se actualizará sola.')))
+    .catch((err) => toast('error', T(String(err))));
+}
 
 // ───────────────────────── idioma
 

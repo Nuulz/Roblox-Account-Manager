@@ -396,8 +396,8 @@ async fn browser_open(user_id: i64, path: Option<String>) -> CmdResult<()> {
 }
 
 #[tauri::command]
-async fn browser_login() -> CmdResult<()> {
-    browser::login().await
+async fn browser_login(user_id: Option<i64>) -> CmdResult<()> {
+    browser::login(user_id).await
 }
 
 // ─────────────────────────────────── utilidades

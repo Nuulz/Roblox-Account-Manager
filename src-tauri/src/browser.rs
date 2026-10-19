@@ -3,9 +3,11 @@
 //! WebView2 se bloquea si se leen cookies desde el hilo principal, por eso todo corre en tareas async.
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use tauri::webview::Cookie;
+use tauri::webview::{Cookie, PageLoadEvent};
 use tauri::{Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 use crate::ops::{self, CmdResult};
@@ -23,14 +25,41 @@ fn roblox_url(path: &str) -> tauri::Url {
     format!("https://www.roblox.com{path}").parse().expect("URL fija válida")
 }
 
-fn build(label: &str, title: String, profile: &str) -> CmdResult<WebviewWindow> {
+fn builder<'a>(label: &'a str, title: String, profile: &str) -> CmdResult<WebviewWindowBuilder<'a, tauri::Wry, tauri::AppHandle>> {
     let app = st().app.get().ok_or("La aplicación no está lista")?;
-    WebviewWindowBuilder::new(app, label, WebviewUrl::External("about:blank".parse().map_err(ops::err)?))
+    Ok(WebviewWindowBuilder::new(app, label, WebviewUrl::External("about:blank".parse().map_err(ops::err)?))
         .title(title)
         .inner_size(1000.0, 760.0)
-        .data_directory(profile_dir(profile))
-        .build()
-        .map_err(ops::err)
+        .data_directory(profile_dir(profile)))
+}
+
+fn build(label: &str, title: String, profile: &str) -> CmdResult<WebviewWindow> {
+    builder(label, title, profile)?.build().map_err(ops::err)
+}
+
+/// Script que rellena el formulario de login de Roblox. No pulsa "Iniciar sesión": eso lo hace la persona.
+fn autofill_script(username: &str, password: &str) -> String {
+    let u = serde_json::to_string(username).unwrap_or_default();
+    let p = serde_json::to_string(password).unwrap_or_default();
+    format!(
+        r#"(() => {{
+  const fill = (sel, val) => {{
+    const e = document.querySelector(sel);
+    if (!e) return false;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, val);
+    e.dispatchEvent(new Event('input', {{ bubbles: true }}));
+    e.dispatchEvent(new Event('change', {{ bubbles: true }}));
+    return true;
+  }};
+  let tries = 0;
+  const t = setInterval(() => {{
+    if ((fill('#login-username', {u}) && fill('#login-password', {p})) || ++tries > 40) {{
+      clearInterval(t);
+      document.querySelector('#login-button')?.focus();
+    }}
+  }}, 250);
+}})();"#
+    )
 }
 
 /// Abre roblox.com con la sesión de la cuenta ya iniciada.
@@ -63,20 +92,49 @@ pub async fn open_account(user_id: i64, path: Option<String>) -> CmdResult<()> {
 }
 
 /// Abre la página de inicio de sesión en un perfil limpio y agrega la cuenta en cuanto aparece su cookie.
-pub async fn login() -> CmdResult<()> {
+/// Con `user_id`, rellena el usuario y la contraseña guardados de esa cuenta (solo una a la vez).
+pub async fn login(user_id: Option<i64>) -> CmdResult<()> {
     let app = st().app.get().ok_or("La aplicación no está lista")?;
     if let Some(w) = app.get_webview_window(LOGIN_LABEL) {
         return w.set_focus().map_err(ops::err);
     }
     cleanup_login_profiles();
     let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
-    let w = build(LOGIN_LABEL, "Iniciar sesión en Roblox".into(), &format!("_login_{stamp}"))?;
+    let profile = format!("_login_{stamp}");
+    let mut b = builder(LOGIN_LABEL, "Iniciar sesión en Roblox".into(), &profile)?;
+    let mut password = String::new();
+    if let Some(id) = user_id {
+        let (username, pass) = st()
+            .accounts
+            .read()
+            .iter()
+            .find(|a| a.user_id == id)
+            .map(|a| (a.username.clone(), a.password.clone()))
+            .ok_or("Cuenta no encontrada")?;
+        if pass.is_empty() {
+            return Err("Esta cuenta no tiene contraseña guardada".into());
+        }
+        let script = autofill_script(&username, &pass);
+        password = pass;
+        let done = Arc::new(AtomicBool::new(false));
+        b = b.title(format!("Iniciar sesión en Roblox · {username}")).on_page_load(move |w, p| {
+            let url = p.url();
+            if p.event() == PageLoadEvent::Finished
+                && url.host_str() == Some("www.roblox.com")
+                && url.path().starts_with("/login")
+                && !done.swap(true, Ordering::SeqCst)
+            {
+                let _ = w.eval(&script);
+            }
+        });
+    }
+    let w = b.build().map_err(ops::err)?;
     w.navigate(roblox_url("/login")).map_err(ops::err)?;
-    tauri::async_runtime::spawn(watch_login(w));
+    tauri::async_runtime::spawn(watch_login(w, password));
     Ok(())
 }
 
-async fn watch_login(w: WebviewWindow) {
+async fn watch_login(w: WebviewWindow, password: String) {
     let mut tried = String::new();
     loop {
         tokio::time::sleep(Duration::from_millis(1000)).await;
@@ -90,7 +148,7 @@ async fn watch_login(w: WebviewWindow) {
             continue;
         }
         tried = token.clone();
-        match ops::add_account(&token, "").await {
+        match ops::add_account(&token, &password).await {
             Ok(acc) => {
                 st().toast("success", format!("Cuenta agregada: {}", acc.username));
                 let _ = w.close();
