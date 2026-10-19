@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use once_cell::sync::Lazy;
-use reqwest::header::{HeaderMap, HeaderValue, COOKIE, REFERER, SET_COOKIE, USER_AGENT};
+use reqwest::header::{HeaderMap, HeaderValue, COOKIE, LOCATION, REFERER, SET_COOKIE, USER_AGENT};
 use reqwest::{Client, Method, RequestBuilder, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -466,32 +466,29 @@ impl Api {
         static RE: Lazy<regex::Regex> = Lazy::new(|| {
             regex::Regex::new(r"Roblox\.GameLauncher\.joinPrivateGame\(\d+,\s*'(\w+-\w+-\w+-\w+-\w+)'").unwrap()
         });
-        let url = format!("https://www.roblox.com/games/{place_id}?privateServerLinkCode={link_code}");
-        for host in [url.clone(), url.replace("www.roblox.com", "web.roblox.com")] {
-            let Ok(req) = self.authed(Method::GET, &host, cookie).await else { continue };
-            if let Ok(resp) = req.header(REFERER, GAME_REFERER).send().await {
-                if resp.status() == StatusCode::OK {
-                    let body = resp.text().await.unwrap_or_default();
-                    if let Some(c) = RE.captures(&body) {
-                        return Some(c[1].to_string());
-                    }
+        // Roblox redirige al idioma de la cuenta (/es/games/...) y luego al slug del juego;
+        // el cliente no sigue redirecciones, así que se siguen aquí y solo dentro de roblox.com.
+        let mut url = reqwest::Url::parse(&format!(
+            "https://www.roblox.com/games/{place_id}?privateServerLinkCode={link_code}"
+        ))
+        .ok()?;
+        for _ in 0..5 {
+            let resp = self.req(Method::GET, url.as_str(), Some(cookie)).header(REFERER, GAME_REFERER).send().await.ok()?;
+            if resp.status().is_redirection() {
+                let next = resp.headers().get(LOCATION)?.to_str().ok()?;
+                url = url.join(next).ok()?;
+                if url.scheme() != "https" || !url.host_str()?.ends_with(".roblox.com") {
+                    return None;
                 }
+                continue;
             }
+            if resp.status() != StatusCode::OK {
+                return None;
+            }
+            let body = resp.text().await.unwrap_or_default();
+            return RE.captures(&body).map(|c| c[1].to_string());
         }
-        // API moderna: resolver el enlace compartido
-        let req = self
-            .authed(Method::POST, "https://apis.roblox.com/sharelinks/v1/resolve-link", cookie)
-            .await
-            .ok()?;
-        let v: Value = req
-            .json(&json!({ "linkId": link_code, "linkType": "Server" }))
-            .send()
-            .await
-            .ok()?
-            .json()
-            .await
-            .ok()?;
-        v["privateServerInviteData"]["linkCode"].as_str().map(str::to_string)
+        None
     }
 
     /// Resuelve un enlace `roblox.com/share?code=...&type=Server` a (placeId, privateServerLinkCode).
