@@ -1566,6 +1566,42 @@ $('us-list').addEventListener('click', async (e) => {
 });
 $('rows').addEventListener('click', () => { if (!$('dlg-users').classList.contains('hidden')) usSelText(); });
 
+// ───────────────────────── ayuda (icono ?)
+
+const helpTip = document.createElement('div');
+helpTip.className = 'help-tip hidden';
+helpTip.setAttribute('role', 'tooltip');
+document.body.appendChild(helpTip);
+let helpFor = null;
+
+function showHelp(el) {
+  helpFor = el;
+  helpTip.textContent = el.dataset.help;
+  helpTip.classList.remove('hidden');
+  const r = el.getBoundingClientRect();
+  const w = helpTip.offsetWidth, h = helpTip.offsetHeight;
+  const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
+  const below = r.bottom + 6 + h <= innerHeight - 8;
+  helpTip.style.left = `${left}px`;
+  helpTip.style.top = `${below ? r.bottom + 6 : Math.max(8, r.top - h - 6)}px`;
+}
+function hideHelp() { helpFor = null; helpTip.classList.add('hidden'); }
+
+document.addEventListener('mouseover', (e) => { const h = e.target.closest?.('.help'); if (h && h !== helpFor) showHelp(h); });
+document.addEventListener('mouseout', (e) => { if (e.target.closest?.('.help') && !e.relatedTarget?.closest?.('.help')) hideHelp(); });
+document.addEventListener('focusin', (e) => { if (e.target.classList?.contains('help')) showHelp(e.target); });
+document.addEventListener('focusout', (e) => { if (e.target.classList?.contains('help')) hideHelp(); });
+// Dentro de un label o un botón, el "?" no debe marcar la casilla ni pulsar el botón.
+document.addEventListener('click', (e) => {
+  const h = e.target.closest?.('.help');
+  if (!h) { if (helpFor) hideHelp(); return; }
+  e.preventDefault();
+  e.stopPropagation();
+  showHelp(h);
+}, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideHelp(); });
+document.addEventListener('scroll', hideHelp, true);
+
 // ───────────────────────── idioma
 
 $('lang-sel').value = LANG;

@@ -477,7 +477,67 @@ const I18N_EN = {
   'Usar en el Lanzador': 'Use in the Launcher',
   '{n} visitas': '{n} visits',
 
+  // ayuda (icono ?)
+  'Cifra tus cuentas con tu usuario de Windows. No tienes que escribir ninguna contraseña, pero el archivo solo se puede abrir en este PC y con este usuario de Windows.': 'Encrypts your accounts with your Windows user. You never type a password, but the file can only be opened on this PC with this Windows user.',
+  'Permite tener varias ventanas de Roblox abiertas a la vez, una por cuenta. Cierra Roblox antes de activarlo.': 'Lets you have several Roblox windows open at once, one per account. Close Roblox before turning it on.',
+  'Número que identifica un juego. Está en el enlace del juego: roblox.com/games/ESTE_NÚMERO/nombre.': "Number that identifies a game. It is in the game's link: roblox.com/games/THIS_NUMBER/name.",
+  'Identifica un servidor concreto dentro del juego. Si lo dejas vacío, entras a un servidor cualquiera. También acepta un enlace de servidor privado.': 'Identifies one specific server inside the game. Leave it empty to join any server. A private server link also works here.',
+  'Une tus cuentas seleccionadas al juego en el que está ese usuario. Solo funciona si está en un juego y su privacidad lo permite.': 'Joins your selected accounts to the game that user is in. It only works if they are in a game and their privacy allows it.',
+  'Un perfil de lanzamiento guarda un grupo de cuentas, un juego y un retraso, para abrirlos todos con un clic. Se crean en Herramientas > Perfiles.': 'A launch profile stores a group of accounts, a game and a delay, so you can open them all with one click. Create them in Tools > Profiles.',
+  'AFK significa "lejos del teclado". Roblox expulsa a quien pasa unos 20 minutos sin moverse. El anti-AFK pulsa de vez en cuando espacio o W/A/D en las ventanas de Roblox de las cuentas marcadas.': 'AFK means "away from keyboard". Roblox kicks players after about 20 minutes without moving. Anti-AFK now and then presses space or W/A/D in the Roblox windows of the marked accounts.',
+  'Días desde la última vez que usaste esta cuenta desde la app.': 'Days since you last used this account from the app.',
+  'Código de 4 dígitos que Roblox puede pedir antes de cambiar ajustes importantes de la cuenta. Desbloquearlo aquí lo deja abierto un rato.': 'A 4-digit code Roblox may ask for before changing important account settings. Unlocking it here leaves it open for a while.',
+  'Para entrar en otro dispositivo sin escribir la contraseña: ese dispositivo muestra un código y aquí lo apruebas.': 'To log in on another device without typing the password: that device shows a code and you approve it here.',
+  'La "llave" de la sesión de Roblox de una cuenta. Quien la tenga puede usar la cuenta sin contraseña: nunca se la des a nadie.': "The key to an account's Roblox session. Whoever has it can use the account without the password: never give it to anyone.",
+  'RAP (Recent Average Price) es el precio medio de las últimas ventas de un limited según Roblox. Sirve de referencia, no es un precio garantizado.': 'RAP (Recent Average Price) is the average price of recent sales of a limited according to Roblox. It is a reference, not a guaranteed price.',
+  'Los limiteds son objetos de edición limitada que se pueden revender o intercambiar. Algunos están numerados (Serie).': 'Limiteds are limited-edition items that can be resold or traded. Some are numbered (Serial).',
+  'Cuentas cuyo inventario no es público: Roblox no deja ver sus objetos. Se cambia en la privacidad de la cuenta.': "Accounts whose inventory is not public: Roblox doesn't let anyone see their items. It is changed in the account's privacy settings.",
+  'Número de copia de un limited único y cuántas copias existen en total.': 'Copy number of a unique limited and how many copies exist in total.',
+  'Roblox ya no acepta la cookie guardada (venció o se cerró la sesión). Usa "Iniciar sesión" para renovarla.': 'Roblox no longer accepts the saved cookie (it expired or the session was closed). Use "Log in" to renew it.',
+  'Acepta el enlace clásico (…?privateServerLinkCode=…) y el enlace para compartir nuevo (roblox.com/share?code=…&type=Server).': 'Accepts the classic link (…?privateServerLinkCode=…) and the new share link (roblox.com/share?code=…&type=Server).',
+  'Evita que varias ventanas de Roblox mezclen sus sesiones al teletransportarse entre lugares de un juego, que es lo que provoca el error 773.': 'Stops several Roblox windows from mixing their sessions when teleporting between places of a game, which is what causes error 773.',
+  'Roblox limita los FPS a 60. Esto sube el límite al número que pongas. Más FPS usa más CPU y GPU.': 'Roblox caps FPS at 60. This raises the cap to the number you set. More FPS uses more CPU and GPU.',
+  'Segundos de espera entre abrir una cuenta y la siguiente. Abrir muchas a la vez puede saturar el PC o hacer fallar el inicio.': 'Seconds to wait between opening one account and the next. Opening many at once can overload the PC or make launches fail.',
+  'En vez de esperar un tiempo fijo, espera a que la ventana de Roblox de cada cuenta se abra antes de lanzar la siguiente.': "Instead of waiting a fixed time, waits for each account's Roblox window to open before launching the next one.",
+  'Cuando eliges servidor aleatorio, prefiere el que tenga menos jugadores.': 'When picking a random server, prefers the one with the fewest players.',
+  'Entra al juego como si te hubieras teletransportado desde otro lugar. Algunos juegos lo tratan distinto; déjalo apagado si no lo necesitas.': 'Joins the game as if you had teleported from another place. Some games treat this differently; leave it off unless you need it.',
+  'Muestra el punto de color de cada cuenta (en línea, en juego, en Studio) y lo actualiza cada tantos minutos.': "Shows each account's colored dot (online, in game, in Studio) and refreshes it every so many minutes.",
+  'Las cookies de cuentas que no usas en más de 20 días se renuevan solas (como mucho una vez por semana) para que no caduquen.': "Cookies of accounts you haven't used for more than 20 days are renewed automatically (at most once a week) so they don't expire.",
+  'Cada cuánto actúa el anti-AFK: elige un tiempo al azar entre estos dos valores.': 'How often anti-AFK acts: it picks a random time between these two values.',
+  'Permite que tus propios programas o scripts controlen la app a través de http://localhost. Si no lo usas, déjalo apagado.': "Lets your own programs or scripts control the app through http://localhost. If you don't use it, leave it off.",
+  'Peligroso: cualquier script con la contraseña del servidor web podría sacar las cookies de tus cuentas.': "Dangerous: any script with the web server password could pull your accounts' cookies.",
+  'Peligroso: otros equipos de tu red podrían conectarse al servidor web de la app.': "Dangerous: other computers on your network could connect to the app's web server.",
+  'Quién puede usar "Seguir" para unirse al juego en el que estás.': 'Who can use "Follow" to join the game you are in.',
+
   // mensajes fijos del backend
+  'Cuenta no encontrada': 'Account not found',
+  'La aplicación no está lista': 'The app is not ready yet',
+  'Archivo de cuentas con formato desconocido': 'Accounts file has an unknown format',
+  'Archivo de cuentas dañado': 'Accounts file is damaged',
+  'Contraseña incorrecta': 'Wrong password',
+  'El archivo no está protegido con contraseña': 'The file is not password protected',
+  'Falta la contraseña maestra': 'The master password is missing',
+  'No se pudo descifrar el archivo antiguo (¿fue creado en otro PC o usuario?)': "Couldn't decrypt the old file (was it created on another PC or user?)",
+  'Se requiere la contraseña maestra': 'The master password is required',
+  'Acción desconocida': 'Unknown action',
+  'Cuenta destino inválida': 'Invalid target account',
+  'Nivel inválido': 'Invalid level',
+  'No se pudo activar multi Roblox: cierra todas las ventanas de Roblox y vuelve a intentarlo': "Couldn't enable Multi Roblox: close every Roblox window and try again",
+  'Tipo desconocido': 'Unknown type',
+  'outfitId inválido': 'Invalid outfit ID',
+  'userId inválido': 'Invalid user ID',
+  'Cookie vacía': 'Empty cookie',
+  'No se pudo resolver el enlace del servidor privado': "Couldn't resolve the private server link",
+  'Hace falta al menos una cuenta válida': 'At least one valid account is needed',
+  'Cookie inválida': 'Invalid cookie',
+  'La cookie no es válida o la sesión fue cerrada': 'The cookie is invalid or the session was closed',
+  'Respuesta inesperada': 'Unexpected response',
+  'Respuesta inesperada de Roblox': 'Unexpected response from Roblox',
+  'Roblox está limitando las peticiones, espera unos segundos': 'Roblox is rate-limiting requests, wait a few seconds',
+  'Ese archivo necesita su contraseña': 'That file needs its password',
+  'La contraseña debe tener al menos 4 caracteres': 'The password must be at least 4 characters long',
+  'El zip de la actualización no contiene un .exe': 'The update zip does not contain an .exe',
+  'Release sin tag_name': 'Release without tag_name',
   'Contraseña cambiada': 'Password changed',
   'Correo cambiado; Roblox enviará un mensaje para verificarlo': 'Email changed; Roblox will send a message to verify it',
   'Nombre visible cambiado': 'Display name changed',
@@ -487,13 +547,64 @@ const I18N_EN = {
   'Traje aplicado': 'Outfit applied',
 };
 
+// Mensajes con datos variables (sobre todo del backend). {x} captura cualquier texto; el valor capturado
+// también se traduce si es un mensaje conocido.
+const I18N_EN_PATTERNS = [
+  ['Cuenta agregada: {name}', 'Account added: {name}'],
+  ['Código inválido: {err}', 'Invalid code: {err}'],
+  ['El enlace compartido no es válido o caducó (estado: {state})', 'The share link is invalid or expired (status: {state})'],
+  ['Estado {code}', 'Status {code}'],
+  ['La búsqueda falló [{code}]: {err}', 'The search failed [{code}]: {err}'],
+  ['No se encontró el universo del lugar {id}', "Couldn't find the universe of place {id}"],
+  ['No se encontró el usuario "{name}" [{code}]', 'User "{name}" was not found [{code}]'],
+  ['No se pudieron leer los trajes: {err}', "Couldn't read the outfits: {err}"],
+  ['No se pudo aplicar el avatar: {err}', "Couldn't apply the avatar: {err}"],
+  ['No se pudo cambiar el correo (¿contraseña incorrecta?): {err}', "Couldn't change the email (wrong password?): {err}"],
+  ['No se pudo cambiar la contraseña: {err}', "Couldn't change the password: {err}"],
+  ['No se pudo cerrar las otras sesiones [{code}]', "Couldn't sign out the other sessions [{code}]"],
+  ['No se pudo enviar la solicitud: {err}', "Couldn't send the request: {err}"],
+  ['No se pudo leer el traje: {err}', "Couldn't read the outfit: {err}"],
+  ['No se pudo obtener el ticket de autenticación [{code}] {err}', "Couldn't get the authentication ticket [{code}] {err}"],
+  ['No se pudo validar el código: {err}', "Couldn't validate the code: {err}"],
+  ['PIN incorrecto o bloqueado: {err}', 'Wrong or locked PIN: {err}'],
+  ['Presencia: estado {code}', 'Presence: status {code}'],
+  ['Roblox aún no generó el modelo 3D ({state})', "Roblox hasn't generated the 3D model yet ({state})"],
+  ['Roblox no aceptó el enlace [{code}]: {err}', 'Roblox did not accept the link [{code}]: {err}'],
+  ['Roblox no devolvió el inventario [{code}]: {err}', 'Roblox did not return the inventory [{code}]: {err}'],
+  ['Roblox no devolvió los amigos [{code}]: {err}', 'Roblox did not return the friends [{code}]: {err}'],
+  ['Roblox no devolvió los grupos [{code}]: {err}', 'Roblox did not return the groups [{code}]: {err}'],
+  ['Roblox rechazó el cambio [{code}]', 'Roblox rejected the change [{code}]'],
+  ['Roblox: {err}', 'Roblox: {err}'],
+  ['[{code}] La sesión de la cuenta expiró o es inválida. {err}', "[{code}] The account's session expired or is invalid. {err}"],
+  ['[{code}] No se pudo leer el estado del PIN. {err}', "[{code}] Couldn't read the PIN status. {err}"],
+  ['No se pudo escribir la nueva versión: {err}', "Couldn't write the new version: {err}"],
+  ['Servidor web: no se pudo usar el puerto {port}: {err}', "Web server: couldn't use port {port}: {err}"],
+  ['{name}: {err}', '{name}: {err}'],
+].map(([es, en]) => {
+  const names = [];
+  const re = new RegExp('^' + es.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{(\w+)\}/g, (m, k) => { names.push(k); return '([\\s\\S]*?)'; }) + '$');
+  return { re, names, en };
+});
+
 let LANG = (() => {
   try { const l = localStorage.getItem('lang'); if (l === 'es' || l === 'en') return l; } catch {}
   return (navigator.language || 'es').toLowerCase().startsWith('es') ? 'es' : 'en';
 })();
 
-function T(text, vars) {
-  let out = LANG === 'en' ? (I18N_EN[text] ?? text) : text;
+function translatePattern(text, depth) {
+  for (const p of I18N_EN_PATTERNS) {
+    const m = p.re.exec(text);
+    if (!m) continue;
+    const got = {};
+    p.names.forEach((k, i) => { got[k] = depth < 3 ? T(m[i + 1], null, depth + 1) : m[i + 1]; });
+    return p.en.replace(/\{(\w+)\}/g, (x, k) => got[k] ?? x);
+  }
+  return text;
+}
+
+function T(text, vars, depth = 0) {
+  text = String(text ?? '');
+  let out = LANG === 'en' ? (I18N_EN[text] ?? translatePattern(text, depth)) : text;
   if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
   return out;
 }
@@ -511,10 +622,10 @@ function translateDom(root = document.body) {
     const orig = i18nOrig.get(n);
     n.nodeValue = orig.replace(orig.trim(), T(orig.trim()));
   }
-  root.querySelectorAll('[placeholder], [title]').forEach((el) => {
+  root.querySelectorAll('[placeholder], [title], [data-help]').forEach((el) => {
     let saved = i18nOrig.get(el);
-    if (!saved) i18nOrig.set(el, saved = { placeholder: el.getAttribute('placeholder'), title: el.getAttribute('title') });
-    for (const attr of ['placeholder', 'title']) if (saved[attr] && saved[attr] in I18N_EN) el.setAttribute(attr, T(saved[attr]));
+    if (!saved) i18nOrig.set(el, saved = { placeholder: el.getAttribute('placeholder'), title: el.getAttribute('title'), 'data-help': el.getAttribute('data-help') });
+    for (const attr of ['placeholder', 'title', 'data-help']) if (saved[attr] && saved[attr] in I18N_EN) el.setAttribute(attr, T(saved[attr]));
   });
   document.documentElement.lang = LANG;
 }

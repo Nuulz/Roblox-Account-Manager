@@ -315,3 +315,12 @@ button.pgame img, button.pgame i { width: 100%; aspect-ratio: 1; display: block;
 button.pgame span { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button.pgame small { font-size: 10px; color: var(--muted); }
 .pdesc { white-space: pre-wrap; max-height: 90px; overflow: auto; font-size: 11px; }
+
+.help { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 9px; font-weight: 700; line-height: 1; margin-left: 4px; cursor: help; vertical-align: 1px; flex: none; user-select: none; }
+.help:hover, .help:focus { border-color: var(--sel); color: var(--sel); outline: none; }
+.help-tip { position: fixed; z-index: 50; max-width: 280px; padding: 6px 9px; background: var(--ctl); color: var(--text); border: 1px solid var(--ctl-line); box-shadow: 0 4px 14px rgba(0,0,0,.3); font-size: 12px; font-weight: normal; line-height: 1.35; white-space: normal; pointer-events: none; }
+th .help { vertical-align: 0; }
+.r-labels .help { width: 13px; }
+.r-labels > span:last-child { padding-left: 14px; }
+.r-labels .help:last-child { padding-left: 0; }
+.r-row .lbl { white-space: nowrap; width: 76px; }

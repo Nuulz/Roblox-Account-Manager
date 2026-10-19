@@ -23,7 +23,7 @@
       </div>
       <div id="vault-setup" class="hidden">
         <p id="setup-msg">Elige cómo proteger tus cuentas.</p>
-        <label class="row"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI)</label>
+        <label class="row"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI) <span class="help" tabindex="0" data-help="Cifra tus cuentas con tu usuario de Windows. No tienes que escribir ninguna contraseña, pero el archivo solo se puede abrir en este PC y con este usuario de Windows.">?</span></label>
         <label class="row"><input type="radio" name="mode" value="password"> Contraseña maestra</label>
         <label class="row"><input type="radio" name="mode" value="plain"> Sin cifrar</label>
         <input id="setup-pass" type="password" placeholder="Contraseña maestra" class="hidden">
@@ -53,7 +53,7 @@
           <button id="btn-add">Agregar cuenta ▾</button>
           <button id="btn-remove">Eliminar</button>
           <label class="row"><input type="checkbox" id="hide-names"> Ocultar usuarios</label>
-          <label class="row" id="multi-label"><input type="checkbox" id="multi-chk"> Multi Roblox <span id="multi" class="multi-state"></span></label>
+          <label class="row" id="multi-label"><input type="checkbox" id="multi-chk"> Multi Roblox <span id="multi" class="multi-state"></span> <span class="help" tabindex="0" data-help="Permite tener varias ventanas de Roblox abiertas a la vez, una por cuenta. Cierra Roblox antes de activarlo.">?</span></label>
           <input id="search" placeholder="Buscar…">
         </div>
       </div>
@@ -72,7 +72,7 @@
         </div>
 
         <div id="rpane-launch" class="rpane">
-          <div class="r-labels"><span>Place ID</span><span>Job ID</span></div>
+          <div class="r-labels"><span>Place ID <span class="help" tabindex="0" data-help="Número que identifica un juego. Está en el enlace del juego: roblox.com/games/ESTE_NÚMERO/nombre.">?</span></span><span>Job ID <span class="help" tabindex="0" data-help="Identifica un servidor concreto dentro del juego. Si lo dejas vacío, entras a un servidor cualquiera. También acepta un enlace de servidor privado.">?</span></span></div>
           <div class="r-ids">
             <input id="place-id" inputmode="numeric">
             <button id="btn-shuffle" class="icon small" title="Servidor aleatorio si no hay Job ID">⇄</button>
@@ -80,12 +80,12 @@
             <button id="btn-save-game" class="small-text" title="Guardar Place/Job en las cuentas seleccionadas">Guardar</button>
           </div>
           <div class="r-row"><button id="btn-join" class="grow primary">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
-          <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
+          <div class="r-row"><span class="lbl">Usuario <span class="help" tabindex="0" data-help="Une tus cuentas seleccionadas al juego en el que está ese usuario. Solo funciona si está en un juego y su privacidad lo permite.">?</span></span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
           <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
-          <div class="r-row prof-quick"><span class="lbl">Perfil</span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">Lanzar</button></div>
+          <div class="r-row prof-quick"><span class="lbl">Perfil <span class="help" tabindex="0" data-help="Un perfil de lanzamiento guarda un grupo de cuentas, un juego y un retraso, para abrirlos todos con un clic. Se crean en Herramientas &gt; Perfiles.">?</span></span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">Lanzar</button></div>
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
-            <button id="btn-afk">Anti-AFK</button>
+            <button id="btn-afk">Anti-AFK <span class="help" tabindex="0" data-help="AFK significa &quot;lejos del teclado&quot;. Roblox expulsa a quien pasa unos 20 minutos sin moverse. El anti-AFK pulsa de vez en cuando espacio o W/A/D en las ventanas de Roblox de las cuentas marcadas.">?</span></button>
             <button id="btn-find" class="span2">Buscar juego</button>
           </div>
         </div>
@@ -105,7 +105,7 @@
               <div><b id="acc-robux">—</b><span>Robux</span></div>
               <div><b id="acc-email">—</b><span>Correo</span></div>
               <div><b id="acc-pin">—</b><span>PIN</span></div>
-              <div><b id="acc-age">—</b><span>Sin usar</span></div>
+              <div><b id="acc-age">—</b><span>Sin usar <span class="help" tabindex="0" data-help="Días desde la última vez que usaste esta cuenta desde la app.">?</span></span></div>
             </div>
 
             <details open><summary>Perfil</summary>
@@ -126,15 +126,15 @@
               <div class="r-row"><input id="pw-cur" type="password" placeholder="Actual" class="grow"><input id="pw-new" type="password" placeholder="Nueva" class="grow"><button id="pw-go">Cambiar</button></div>
               <label class="sub">Correo</label>
               <div class="r-row"><input id="em-new" placeholder="Correo nuevo" class="grow"><input id="em-pass" type="password" placeholder="Contraseña" class="grow"><button id="em-go">Cambiar</button></div>
-              <label class="sub">PIN de la cuenta</label>
+              <label class="sub">PIN de la cuenta <span class="help" tabindex="0" data-help="Código de 4 dígitos que Roblox puede pedir antes de cambiar ajustes importantes de la cuenta. Desbloquearlo aquí lo deja abierto un rato.">?</span></label>
               <div class="r-row"><input id="pin-code" inputmode="numeric" maxlength="4" placeholder="PIN" class="grow"><button id="pin-go">Desbloquear</button></div>
-              <label class="sub">Inicio de sesión rápido</label>
+              <label class="sub">Inicio de sesión rápido <span class="help" tabindex="0" data-help="Para entrar en otro dispositivo sin escribir la contraseña: ese dispositivo muestra un código y aquí lo apruebas.">?</span></label>
               <div class="r-row"><input id="ql-code" placeholder="Código del otro dispositivo" class="grow"><button id="ql-go">Aprobar</button></div>
               <div class="r-row"><span class="grow muted">Cierra la sesión en los demás dispositivos y renueva la cookie.</span><button id="so-go">Cerrar otras</button></div>
             </details>
 
             <details><summary>Privacidad y amigos</summary>
-              <label class="sub">Quién puede seguirte a juegos</label>
+              <label class="sub">Quién puede seguirte a juegos <span class="help" tabindex="0" data-help="Quién puede usar &quot;Seguir&quot; para unirse al juego en el que estás.">?</span></label>
               <div class="r-row">
                 <select id="fp-level" class="grow"><option value="0">Todos</option><option value="1">Seguidores</option><option value="2">A quienes sigo</option><option value="3">Amigos</option><option value="4">Nadie</option></select>
                 <button id="fp-go">Aplicar</button>
@@ -173,7 +173,7 @@
   <div id="dlg-add" class="overlay hidden">
     <div class="card">
       <h2>Agregar cuenta</h2>
-      <label>Cookie .ROBLOSECURITY<textarea id="add-cookie" rows="3"></textarea></label>
+      <label>Cookie .ROBLOSECURITY <span class="help" tabindex="0" data-help="La &quot;llave&quot; de la sesión de Roblox de una cuenta. Quien la tenga puede usar la cuenta sin contraseña: nunca se la des a nadie.">?</span><textarea id="add-cookie" rows="3"></textarea></label>
       <label>Contraseña (opcional)<input id="add-pass" type="password"></label>
       <p id="add-err" class="err"></p>
       <div class="actions"><button id="add-cancel">Cancelar</button><button id="add-ok" class="primary">Agregar</button></div>
@@ -247,10 +247,10 @@
     <div class="card big wide">
       <h2>Inventario y limiteds <button class="close" data-close="dlg-inv">✕</button></h2>
       <div class="stat-sum hl-sum">
-        <div><b id="inv-rap">—</b><span>Valor RAP total</span></div>
-        <div><b id="inv-count">—</b><span>Limiteds</span></div>
+        <div><b id="inv-rap">—</b><span>Valor RAP total <span class="help" tabindex="0" data-help="RAP (Recent Average Price) es el precio medio de las últimas ventas de un limited según Roblox. Sirve de referencia, no es un precio garantizado.">?</span></span></div>
+        <div><b id="inv-count">—</b><span>Limiteds <span class="help" tabindex="0" data-help="Los limiteds son objetos de edición limitada que se pueden revender o intercambiar. Algunos están numerados (Serie).">?</span></span></div>
         <div><b id="inv-accs">—</b><span>Cuentas con limiteds</span></div>
-        <div><b id="inv-priv">—</b><span>Inventario privado</span></div>
+        <div><b id="inv-priv">—</b><span>Inventario privado <span class="help" tabindex="0" data-help="Cuentas cuyo inventario no es público: Roblox no deja ver sus objetos. Se cambia en la privacidad de la cuenta.">?</span></span></div>
       </div>
       <div class="r-row">
         <button id="inv-all" class="primary">Cargar todas las cuentas</button><button id="inv-sel">Cargar selección</button>
@@ -259,7 +259,7 @@
       </div>
       <div class="r-row"><span id="inv-msg" class="grow muted"></span></div>
       <div class="scroll">
-        <table class="inv"><thead><tr><th style="width:44px"></th><th>Objeto</th><th style="width:150px">Cuenta</th><th style="width:90px">RAP</th><th style="width:80px">Serie</th><th style="width:90px"></th></tr></thead><tbody id="inv-rows"></tbody></table>
+        <table class="inv"><thead><tr><th style="width:44px"></th><th>Objeto</th><th style="width:150px">Cuenta</th><th style="width:90px">RAP</th><th style="width:80px">Serie <span class="help" tabindex="0" data-help="Número de copia de un limited único y cuántas copias existen en total.">?</span></th><th style="width:90px"></th></tr></thead><tbody id="inv-rows"></tbody></table>
       </div>
       <p class="muted hl-note">RAP es el precio medio de las últimas ventas según Roblox; es una referencia, no un precio garantizado. Solo se ven los inventarios públicos.</p>
     </div>
@@ -308,7 +308,7 @@
   <div id="dlg-vips" class="overlay hidden">
     <div class="card big wide">
       <h2>Servidores privados <button class="close" data-close="dlg-vips">✕</button></h2>
-      <fieldset class="vip-form"><legend id="vip-form-title">Guardar un servidor</legend>
+      <fieldset class="vip-form"><legend><span id="vip-form-title">Guardar un servidor</span> <span class="help" tabindex="0" data-help="Acepta el enlace clásico (…?privateServerLinkCode=…) y el enlace para compartir nuevo (roblox.com/share?code=…&amp;type=Server).">?</span></legend>
         <div class="r-row">
           <input id="vip-link" class="grow" placeholder="Enlace del servidor privado (roblox.com/share?code=… o …?privateServerLinkCode=…)">
         </div>
@@ -331,7 +331,7 @@
       <div class="stat-sum hl-sum">
         <div><b id="hl-robux">—</b><span>Robux en total</span><small id="hl-delta"></small></div>
         <div><b id="hl-ok" class="ok">—</b><span>Sesión válida</span></div>
-        <div><b id="hl-bad" class="bad">—</b><span>Hay que iniciar sesión</span></div>
+        <div><b id="hl-bad" class="bad">—</b><span>Hay que iniciar sesión <span class="help" tabindex="0" data-help="Roblox ya no acepta la cookie guardada (venció o se cerró la sesión). Usa &quot;Iniciar sesión&quot; para renovarla.">?</span></span></div>
         <div><b id="hl-unk">—</b><span>Sin comprobar</span></div>
       </div>
       <div class="r-row">
@@ -388,33 +388,33 @@
       <div class="scroll settings">
         <fieldset><legend>Roblox</legend>
           <label class="row"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox</label>
-          <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773)</label>
+          <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773) <span class="help" tabindex="0" data-help="Evita que varias ventanas de Roblox mezclen sus sesiones al teletransportarse entre lugares de un juego, que es lo que provoca el error 773.">?</span></label>
           <label class="row"><input type="checkbox" data-k="autoCloseLastProcess"> Cerrar el Roblox anterior de la cuenta al lanzar</label>
-          <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS, máximo <input type="number" data-k="maxFps" min="30" class="num"></label>
+          <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS, máximo <input type="number" data-k="maxFps" min="30" class="num"> <span class="help" tabindex="0" data-help="Roblox limita los FPS a 60. Esto sube el límite al número que pongas. Más FPS usa más CPU y GPU.">?</span></label>
         </fieldset>
         <fieldset><legend>Lanzamiento</legend>
-          <label class="row">Retraso entre cuentas <input type="number" data-k="accountJoinDelay" min="0" class="num"> s</label>
-          <label class="row"><input type="checkbox" data-k="asyncJoin"> Esperar a que abra cada Roblox en vez del retraso</label>
+          <label class="row">Retraso entre cuentas <input type="number" data-k="accountJoinDelay" min="0" class="num"> s <span class="help" tabindex="0" data-help="Segundos de espera entre abrir una cuenta y la siguiente. Abrir muchas a la vez puede saturar el PC o hacer fallar el inicio.">?</span></label>
+          <label class="row"><input type="checkbox" data-k="asyncJoin"> Esperar a que abra cada Roblox en vez del retraso <span class="help" tabindex="0" data-help="En vez de esperar un tiempo fijo, espera a que la ventana de Roblox de cada cuenta se abra antes de lanzar la siguiente.">?</span></label>
           <label class="row"><input type="checkbox" data-k="shuffleJobId"> Servidor aleatorio si no hay Job ID</label>
-          <label class="row"><input type="checkbox" data-k="shuffleLowestServer"> Preferir el servidor más vacío</label>
-          <label class="row"><input type="checkbox" data-k="isTeleport"> Unirse como teletransporte</label>
+          <label class="row"><input type="checkbox" data-k="shuffleLowestServer"> Preferir el servidor más vacío <span class="help" tabindex="0" data-help="Cuando eliges servidor aleatorio, prefiere el que tenga menos jugadores.">?</span></label>
+          <label class="row"><input type="checkbox" data-k="isTeleport"> Unirse como teletransporte <span class="help" tabindex="0" data-help="Entra al juego como si te hubieras teletransportado desde otro lugar. Algunos juegos lo tratan distinto; déjalo apagado si no lo necesitas.">?</span></label>
         </fieldset>
         <fieldset><legend>Cuentas</legend>
           <label class="row"><input type="checkbox" data-k="savePasswords"> Guardar contraseñas</label>
-          <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado, cada <input type="number" data-k="presenceUpdateMinutes" min="1" class="num"> min</label>
-          <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar</label>
-          <label class="row">Anti-AFK entre <input type="number" data-k="antiAfkMinMinutes" min="1" class="num"> y <input type="number" data-k="antiAfkMaxMinutes" min="1" class="num"> min</label>
+          <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado, cada <input type="number" data-k="presenceUpdateMinutes" min="1" class="num"> min <span class="help" tabindex="0" data-help="Muestra el punto de color de cada cuenta (en línea, en juego, en Studio) y lo actualiza cada tantos minutos.">?</span></label>
+          <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar <span class="help" tabindex="0" data-help="Las cookies de cuentas que no usas en más de 20 días se renuevan solas (como mucho una vez por semana) para que no caduquen.">?</span></label>
+          <label class="row">Anti-AFK entre <input type="number" data-k="antiAfkMinMinutes" min="1" class="num"> y <input type="number" data-k="antiAfkMaxMinutes" min="1" class="num"> min <span class="help" tabindex="0" data-help="Cada cuánto actúa el anti-AFK: elige un tiempo al azar entre estos dos valores.">?</span></label>
           <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
         </fieldset>
-        <fieldset><legend>Servidor web local (para tus scripts)</legend>
+        <fieldset><legend>Servidor web local (para tus scripts) <span class="help" tabindex="0" data-help="Permite que tus propios programas o scripts controlen la app a través de http://localhost. Si no lo usas, déjalo apagado.">?</span></legend>
           <label class="row"><input type="checkbox" data-ws="enabled"> Activar en el puerto <input type="number" data-ws="port" min="1" max="65535" class="num" style="width:70px"></label>
           <label class="row">Contraseña <input type="password" data-ws="password" placeholder="mínimo 6 caracteres" style="width:180px"></label>
           <label class="row"><input type="checkbox" data-ws="everyRequestRequiresPassword"> Pedir contraseña en todas las peticiones</label>
           <label class="row"><input type="checkbox" data-ws="allowGetAccounts"> Permitir GetAccounts / GetAccountsJson</label>
-          <label class="row"><input type="checkbox" data-ws="allowGetCookie"> Permitir GetCookie (entrega la cookie de la cuenta)</label>
+          <label class="row"><input type="checkbox" data-ws="allowGetCookie"> Permitir GetCookie (entrega la cookie de la cuenta) <span class="help" tabindex="0" data-help="Peligroso: cualquier script con la contraseña del servidor web podría sacar las cookies de tus cuentas.">?</span></label>
           <label class="row"><input type="checkbox" data-ws="allowLaunchAccount"> Permitir LaunchAccount / FollowUser</label>
           <label class="row"><input type="checkbox" data-ws="allowAccountEditing"> Permitir editar alias, descripción y campos</label>
-          <label class="row"><input type="checkbox" data-ws="allowExternalConnections"> Aceptar conexiones de otros equipos de la red</label>
+          <label class="row"><input type="checkbox" data-ws="allowExternalConnections"> Aceptar conexiones de otros equipos de la red <span class="help" tabindex="0" data-help="Peligroso: otros equipos de tu red podrían conectarse al servidor web de la app.">?</span></label>
           <span class="muted">Ejemplo: http://localhost:7963/GetAccounts?Password=…</span>
         </fieldset>
         <fieldset><legend>Aplicación</legend>
