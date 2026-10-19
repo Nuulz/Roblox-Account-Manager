@@ -1,180 +1,166 @@
-[![Download](https://img.shields.io/github/v/release/ic3w0lf22/Roblox-Account-Manager)](https://github.com/ic3w0lf22/Roblox-Account-Manager/releases/latest)
-[![Latest Downloads](https://img.shields.io/github/downloads/ic3w0lf22/Roblox-Account-Manager/latest/total)](https://github.com/ic3w0lf22/Roblox-Account-Manager/releases)
-[![Discord](https://img.shields.io/discord/871845273800957982?label=Discord)](https://discord.gg/MsEH7smXY8)
-![License](https://img.shields.io/github/license/ic3w0lf22/Roblox-Account-Manager)
+[![Release](https://img.shields.io/github/v/release/Nuulz/Roblox-Account-Manager)](https://github.com/Nuulz/Roblox-Account-Manager/releases/latest)
+![License](https://img.shields.io/github/license/Nuulz/Roblox-Account-Manager)
 
-<!-- BEGIN LATEST DOWNLOAD BUTTON -->
-[![Download zip](https://custom-icon-badges.herokuapp.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download")](https://github.com/ic3w0lf22/Roblox-Account-Manager/releases/download/3.6.1/Roblox.Account.Manager.3.6.1.zip)
-<!-- END LATEST DOWNLOAD BUTTON -->
+# Roblox Account Manager 4
 
-[Click here to view Roblox Account Manager features](https://github.com/ic3w0lf22/Roblox-Account-Manager/blob/master/README.md#features)
+Una multiherramienta para quien usa varias cuentas de Roblox: guarda tus cuentas cifradas, ábrelas en el juego y servidor que quieras con un clic, y revisa sus Robux, limiteds, amigos y grupos desde un solo lugar.
 
-# Roblox Account Manager
-Application that allows you to add multiple accounts into one application allowing you to easily play on alt accounts without having to change accounts
+La versión 4 es una reescritura completa en **Rust + Tauri** del [Roblox Account Manager original de ic3w0lf22](https://github.com/ic3w0lf22/Roblox-Account-Manager) (C#/WinForms). Está disponible en **español e inglés**.
 
-Useful for games that require grinding off other players, or storage accounts that hold in game items or currency, or just to have multiple accounts that you can easily find and use.
+![Lanzador](Images/launcher.png)
 
-You are welcome to edit the code and create pull requests if it'll benefit this project.
+> **English:** Roblox Account Manager 4 is a full Rust + Tauri rewrite of ic3w0lf22's original account manager. The app is available in English and Spanish (Settings → Application → Language). See [Features](#funciones) for screenshots.
 
-Multiple Roblox Instances is built into the account manager but [must be manually enabled](https://github.com/ic3w0lf22/Roblox-Account-Manager/blob/master/README.md#q-how-do-i-enable-multi-roblox).
+## Advertencia
 
-Report bugs to the issues section or direct message me via discord @ ic3#0001 or join the discord: https://discord.gg/MsEH7smXY8
+- **Nunca compartas tu cookie `.ROBLOSECURITY` ni tu archivo `accounts.dat`.** Con la cookie, cualquiera puede usar tu cuenta sin la contraseña, gastar tus Robux o hacer que te la suspendan.
+- Si alguien te pide que "copies la cookie" o que actives el servidor web con permisos peligrosos, no lo hagas.
+- Algunos juegos no permiten cuentas alternativas. Infórmate antes de usarlas.
 
-# WARNING
-If someone asks you to generate an "rbx-player link", **DO NOT** do it, they can use these to join any game using your account, or even launch roblox studio with one of your games. They can do many things in game such as spend your robux or even do things that can get your account terminated. **USE THESE FEATURES AT YOUR OWN RISK**
+## Funciones
 
-# Extra Features
-Extra features can be enabled by setting DevMode=false to DevMode=true in RAMSettings.ini
-Beware of the risks that you are taking if you accidentally send something to someone.
+La ventana tiene tres pestañas: **Lanzador**, **Cuenta** y **Herramientas**. Los términos poco claros tienen un icono **?** que explica qué son.
 
-If you ever want a friend to join a game using your account, make sure you have the PlaceId and JobId correctly entered, then right click an account, and click "Copy rbx-player link", DO NOT do this if someone asks you for it.
+### Lanzador
 
-# Download
-To install this, head over to the [Releases](https://github.com/ic3w0lf22/Roblox-Account-Manager/releases) section and download the rar file at the very top, once downloaded, extract the files into a folder on your desktop and run RBX Alt Manager.exe.
+- **Unirse a un juego** con una o varias cuentas a la vez, a un servidor aleatorio, a uno concreto (Job ID) o a un servidor privado.
+- **Seguir** a un usuario al juego en el que está.
+- **Multi Roblox:** varias ventanas de Roblox abiertas a la vez, una por cuenta.
+- **Perfiles de lanzamiento:** guarda "estas cuentas, en este orden, en este juego, con este retraso" y lánzalas con un clic.
+- **Anti-AFK**, juegos recientes y favoritos, y guardar el Place/Job de cada cuenta.
 
-If the application isn't starting or not working, make sure to install the [Latest .NET Framework](https://dotnet.microsoft.com/download/dotnet-framework).
-Still having issues? Download and install [vcredist](https://aka.ms/vs/16/release/vc_redist.x86.exe)
+### Cuenta
 
-# Developer API
-To view the documentation, [click here](https://ic3w0lf22.gitbook.io/roblox-account-manager/).
-Change the webserver port if you are planning on using any dangerous functions!
-Be careful executing random scripts when having dangerous settings enabled.
+Todo lo de la cuenta seleccionada en un solo panel: Robux, correo verificado, PIN, alias y descripción, nombre visible, **trajes** (ponle un traje a varias cuentas a la vez), contraseña, correo, PIN, inicio de sesión rápido, cerrar otras sesiones, privacidad de seguimiento, solicitudes de amistad entre tus cuentas y usuarios bloqueados.
 
-# Frequently Asked Questions
-## **Q:** Why is this program detected as a virus?
+![Cuenta](Images/account.png)
 
-**A:** Open source programs such as this program are commonly detected as viruses because actual malware may be using the same libaries as this one. For example, account manager may be detected as a RAT because of the Account Control feature, this feature uses [websockets](https://github.com/ic3w0lf22/Roblox-Account-Manager/blob/master/RBX%20Alt%20Manager/Nexus/WebsocketServer.cs) to connect to clients which is the same way actual malware may use to connect maliciously to someone elses computer. If you'd like, you can download [visual studio](https://visualstudio.microsoft.com/downloads/) yourself (it's free) and compile this program on your own, you may even get the same virus detections as the public release.
+### Herramientas
 
+![Herramientas](Images/tools.png)
 
-## **Q:** How do I enable multi-roblox?
+| Herramienta | Qué hace |
+| :--- | :--- |
+| **Salud y Robux** | Revisa todas las cuentas: detecta cookies vencidas o que pertenecen a otra cuenta, suma los Robux y muestra cuánto cambiaron desde la revisión anterior. También cuenta las solicitudes de amistad y los mensajes sin leer, que aparecen como "N avisos" en la lista. |
+| **Inventario y limiteds** | Los limiteds de todas tus cuentas con su valor RAP y el total, con filtros por objeto y por cuenta. |
+| **Amigos conectados** | Los amigos de todas tus cuentas en una lista: quién está en línea, en qué juego, y un botón para unirte con las cuentas que son sus amigas. |
+| **Buscar usuarios** | Busca a cualquier usuario por nombre o ID, mira su perfil (nombres anteriores, insignias, grupos, limiteds, juegos favoritos) y síguelo a su juego con varias cuentas. |
+| **Copiar avatar** | Pone a varias cuentas el mismo avatar que una de tus cuentas o que cualquier usuario. Solo usa objetos que cada cuenta ya tiene. |
+| **Grupos Roblox** | En qué grupos está cada cuenta, con su rango, cuáles son tuyos y cuáles compartes entre cuentas. |
+| **Servidores privados** | Guarda enlaces de servidores privados, incluidos los nuevos enlaces `roblox.com/share?code=…`, y únete con las cuentas que elijas. |
+| **Buscador de juegos** | Busca juegos por nombre, mira jugadores conectados y % de likes, y mándalos al Lanzador. |
+| **Servidores** | Lista de servidores de un juego con jugadores, ping, región y cuáles de tus cuentas están en cada uno. |
+| **Procesos** | Las ventanas de Roblox abiertas, con memoria y tiempo; minimizar, cerrar o forzar el cierre. |
+| **Estadísticas** | Tiempo jugado por cuenta y por juego, y el avatar en 3D. |
+| **Importar / Exportar** | Copias de seguridad de tus cuentas. |
 
-**A:** Open the settings menu by clicking the gear/cog icon in the top right, in the `General` tab, you will see a checkbox for `Multi Roblox`, make sure you have Roblox closed, then check the checkbox.
+#### Salud y Robux
+![Salud y Robux](Images/health.png)
 
+#### Inventario y limiteds
+![Inventario](Images/inventory.png)
 
-## **Q:** Why was multi-roblox disabled by default?
+#### Amigos conectados
+![Amigos conectados](Images/friends.png)
 
-**A:** A byfron developer has stated that using multiple clients may be considered as malicious behavior, so I have decided to disable mutli-roblox by default and instead have users enable the option manually at their own risk.
-![2023-05-06 23_58_33-Clipboard](https://user-images.githubusercontent.com/11778654/236662271-ce6bc2c8-7690-436a-97d0-1cfea56b541f.png)
+#### Buscar usuarios
+![Perfil de usuario](Images/user-profile.png)
 
+#### Copiar avatar
+![Copiar avatar](Images/copy-avatar.png)
 
+#### Grupos Roblox
+![Grupos](Images/groups.png)
 
-## **Q:** Why am I getting CefSharp.Core.Runtime.dll/Object reference not set errors, how do I fix it?
+#### Servidores privados
+![Servidores privados](Images/private-servers.png)
 
-**A:** Download the x86 version from https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist | On an older OS? Try downloading [older versions of vcredist](https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2013-vc-120) by scrolling down on or clicking the link | If that doesn't work, download the latest .NET Framework from https://dotnet.microsoft.com/download/dotnet-framework
+#### Buscador de juegos
+![Buscador de juegos](Images/game-finder.png)
 
+#### Perfiles de lanzamiento
+![Perfiles](Images/profiles.png)
+![Editar perfil](Images/profile-edit.png)
 
-## **Q:** Why do my accounts have yellow/red dots on them?
+### Agregar cuentas
 
-**A:** The yellow-red dots that appear on an account means that account hasn't been used in over 20 days, as that day counter goes up, the dot appears more red. You can get rid of this dot by joining a game or enabling developer mode and clicking "Get Authentication Ticket" when you right click an account (works with multiple).
+- **Iniciar sesión en el navegador:** abre la página de login de Roblox en una ventana propia; al entrar, la cuenta se agrega sola.
+- **Por cookie:** pega la cookie `.ROBLOSECURITY`.
+- **Volver a iniciar sesión:** si una cuenta vence, abre el login con su usuario y contraseña guardados ya escritos (una cuenta a la vez; tú pulsas "Iniciar sesión").
+- **Abrir en el navegador:** roblox.com con la sesión de la cuenta, en un perfil de navegador propio para cada cuenta.
 
+### Ajustes, ayuda e idioma
 
-## **Q:** How do I backup my accounts file?
+![Ajustes con ayuda](Images/settings-help.png)
 
-**A:** Download [RAMDecrypt](https://github.com/ic3w0lf22/RAMDecrypt) and follow the instructions provided, then you can save the fully decrypted file in google drive, on a flash drive, or where ever you'd like. This does **NOT** work on files that didn't originate from your PC.
+La app está en español e inglés y se cambia en **Ajustes → Aplicación → Idioma**, sin reiniciar.
 
+![English](Images/english.png)
 
-## **Q:** How do I prevent Windows Defender from deleting alt manager files?
+## Descarga
 
-**A:** Add an exclusion for the Roblox Account Manager folder, here's a video on how to add an exclusion: https://youtu.be/1r93NtwZt4o
+Descarga el instalador desde [Releases](https://github.com/Nuulz/Roblox-Account-Manager/releases/latest). La app busca actualizaciones al iniciar (se puede desactivar en Ajustes).
 
+Requisitos: **Windows 10 u 11** y el [WebView2 Runtime de Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/), que ya viene con Windows 11 y el instalador lo descarga si falta.
 
-## **Q:** Can I join vip servers using alt manager?
+## Compilar desde el código
 
-**A:** Yes you can, just make sure the place id is the same as the game you're trying to join, then paste the whole vip server link into the Job ID box and press Join Server
+```bash
+# Requisitos: Rust (rustup) y las herramientas de compilación de Visual Studio en Windows
+cargo install tauri-cli --version "^2"
+cd src-tauri
+cargo tauri dev     # ejecutar en modo desarrollo
+cargo tauri build   # crear el instalador (NSIS)
+```
 
+La interfaz es HTML/JS sin compilar, en `ui/`. El backend está en `src-tauri/src/`.
 
-## **Q:** Are there docs for the API?
+## Tus datos
 
-**A:** Yes, there are Docs: https://ic3w0lf22.gitbook.io/roblox-account-manager/
+Todo se guarda junto al ejecutable:
 
+| Archivo | Contenido |
+| :--- | :--- |
+| `accounts.dat` | Tus cuentas, cifradas con tu usuario de Windows (DPAPI), con una contraseña maestra o sin cifrar, según elijas la primera vez. |
+| `settings.json` | Ajustes. |
+| `games.json`, `profiles.json`, `private_servers.json` | Juegos recientes y favoritos, perfiles de lanzamiento y servidores privados guardados. |
+| `health.json`, `stats.json` | Última revisión de salud y estadísticas de juego. |
+| `WebView2Data/` | Perfiles de navegador de cada cuenta. |
 
-## **Q:** My anti virus detects this program as a virus. Should I not use it?
+Si vienes de la versión 3, la app importa tu `AccountData.json` la primera vez que la abres.
 
-**A:** No. This program is in no way malicious, it's source code is fully available & trusted by a lot of people in the community. Some anti-virus programs may detect Account Manager as malicious because of the auto update function (a similar thing happens with Roblox Studio Mod Manager as well)
+## API local para scripts
 
+Si la activas en **Ajustes → Servidor web local**, puedes controlar la app con peticiones HTTP a `http://localhost:7963/`. Métodos disponibles: `GetAccountsJson`, `GetCookie`, `GetCSRFToken`, `LaunchAccount`, `FollowUser`, `GetAlias`, `GetDescription`, `GetField`, `SetField`, `RemoveField`, `SetAvatar`, `ImportCookie`, `GetBlockedList`, `UnblockUser`, `UnblockEveryone` y `Running`.
 
-## **Q:** Can you use this on Mac?
+Ponle una contraseña, y no actives `GetCookie` ni las conexiones desde otros equipos si no sabes exactamente por qué.
 
-**A:** No, unfortunately we do not have compatibility with mac osx devices at this moment. This may change in the future.
+## Preguntas frecuentes
 
+**¿Por qué el antivirus lo detecta como virus?**
+Los programas de código abierto que manejan cookies, abren procesos o se actualizan solos a veces dan falsos positivos. El código está completo en este repositorio y puedes compilarlo tú mismo.
 
-## **Q:** You should add ${feature}.
-
-**A:** If you have a idea or a request for a feature you can submit such ideas/requests in suggestions
-
-
-## **Q:** I’ve encountered a bug/issue on this software
-
-**A:** If you have a bug or issue please explain your issue with screenshots (if possible) and/or a highly descriptive explanation in bugs we will try to get back to you ASAP.
-Make sure you click "Open Details" before screenshotting. Please make sure your output is in English.
-
-
-## **Q:** I can’t launch multiple accounts repeatedly.
-
-**A:** This is due to Roblox’s rate limiting
-
-
-## **Q:** Adding an account doesn't work
-
-**A:** Restart the program, this issue will be fixed next update
-
-
-## **Q:** Can you get banned for using this?
-
-**A:** No, you cannot get banned for using this as this does not break Roblox T.O.S although some games may disallow you from having alt accounts so please do your research if you are unsure.
-
-## **Q:** My AccountData file gets corrupted often
-**A:** This is due to ProtectedData failing sometimes. You can disable encryption by creating a file called `NoEncryption.IUnderstandTheRisks.iautamor`. Do this at your own risk, nobody except yourself is responsible for your accounts!
-
-# Features
-| Feature | Description | How to |
-| :--- | :---: | ---: |
-| Account Encryption | All your account data is locally encrypted using your computer as the **password/key** meaning if someone else gets a hold of your account data, they will **NOT** be able to decrypt it unless you decrypted it yourself and shared it | **DO NOT SHARE YOUR `AccountData.json` FILE AT ALL |
-| Password Encryption | Use a password to encrypt your data | This is recommended as it allows you store your data safely in google drive/similar and won't get corrupted due to you switching computers |
-| [Multi Roblox](https://github.com/ic3w0lf22/Roblox-Account-Manager/blob/master/README.md#q-how-do-i-enable-multi-roblox) | [DISABLED BY DEFAULT, READ FAQ] RAM comes with a built-in multi Roblox allowing multiple Roblox clients to be open at once | **If this doesn't work for you, make sure no Roblox processes are running in the background by checking in task manager, then restart RAM** |
-| Load Region | See where a server is located and get an accurate ping reading | Right click a server in the `Server List`, then click `Load Region` **(Requires a valid account to be selected in the main window)** |
-| Server List | See a game's servers, including the servers' data such as player count and server ping | Click `Server List` on the right side of the main window |
-| [Join Small Servers](https://youtu.be/Red66cV6vVI) | Easily join small servers in games that use lobby starter places to teleport you to another game | Insert the actual game's PlaceId into the text box next to `Refresh` in the `Server List`, click `Refresh`, then right click a server and click `Join Game`, you will hear a beep if successful, once you hear that beep, you can join the main game |
-| Account Utilities | Easily change your account password, email, follow privacy, etc | Click `Account Utilities` in the main window **(Requires a valid account to be selected in the main window)** |
-| Account Sorting | Sort your accounts easily | Simply drag and drop an account on the list |
-| Account Grouping | Sort your accounts by groups, you can also drag and drop accounts into other groups | Right click an account, hover over `Groups`, then click `Move account to` |
-| Group Sorting | Sort groups from top to bottom by assigning numbers to them | When creating a group, you can put a number from 0-999 (ex. `1Main`, `007 Bank`, `67 Dead`, ...), sorted from smallest to largest, the numbers will be hidden afterwards |
-| Games List | Browse through thousands of games you normally wouldn't see on the front page | Click `Server List`, then `Games` |
-| Favorite Games | Add your favorite games to a list you can easily navigate to | Click `Server List`, then `Favorites` |
-| Recent Games | Saves your recently played games into the `PlaceId` text box | After joining a game, that game will be added to the recent games list, which you can then quickly load up by hovering over the clock icon above the `PlaceId` text box or by typing the game's name into the `PlaceId` text box in the main window |
-| Open Browser | Open a browser window using the selected account, allowing you to various settings | Click `Open Browser` in the main window while having an account selected |
-| Join VIP Servers |  | Simply place your entire VIP server link into the `PlaceId` text box and RAM will handle the rest |
-| Shuffle JobId | Selects a random JobId for every account everytime you press "Join Server" unless you have a JobId set | Click the shuffle icon to toggle JobId Shuffler |
-| Save PlaceId & JobId | Save specific `PlaceId`s and/or `JobId`s to specific accounts | Once you enter your desired PlaceId and/or VIP links, click the `Save` icon next to the `JobId` text box |
-| Player Finder | Find a player even if their follows are off as long as you know what game they are in | In the `Server List` window, put a player's username into the `Username` text box, then click search. **This may take a while to load and may be patched in the near future** |
-| Universe Viewer | View a game's universe | Open `Utilities`, then click `Universe` |
-| Outfit Viewer | View other player's outfits and even wear their outfits | Open `Utilities`, then click `Outfits` |
-| Sort Account by Usage Date | View the last time you used an account | Make sure to enable headers in the Theme Editor, right click the header and enable `Last Used`, then right click an account, hover `Groups`, and press `Toggle`. You can now click on `Last Used` in the header to sort the accounts. |
-| Close Roblox Beta | Detects if the Roblox Beta Home Menu is open and terminates the process if so | Open `Utilities`, then click `Watcher` to modify settings |
-| Prevent Duplicate Instances | Automatically shuts down old instances when you launch an account | Account Manager automatically assigns a number called `BrowserTrackerID` to each account allowing it to know if there is an active instance of that specific account running, then proceeds to close it preventing instances of the same account opening more than once |
-| Save Passwords | Upon logging into an account, RAM will automatically save that accounts password which can then be copied by right clicking the account, then selecting `Copy Password` | This can be disabled by clicking the settings button (gear cog in top-right corner), the unchecking `Save Passwords` |
-| Themes | Customize RAM to your liking (P.S. I know it's very ugly, not much I can do about it with WinForms) | Click `Edit Theme` in the main window |
-| Developer Mode | Enable hidden features not available to normal users for safety reasons | Click the settings button (gear cog in top-right corner), click `Developer`, then check the `Enable Developer Mode` box |
-| Local Web API | Easily use many RAM features by making a simple http request | [Documentation](https://ic3w0lf22.gitbook.io/roblox-account-manager/) |
-| Account Control | Control your in-game accounts using the `Account Control` window in RAM | Click `Account Control` in the main window - [Documentation](https://github.com/ic3w0lf22/Roblox-Account-Manager/blob/master/RBX%20Alt%20Manager/Nexus/NexusDocs.md) |
-| Import Cookies | Import accounts using their .ROBLOSECURITY cookies | You can drag and drop one or multiple cookies directly into the program, or you can enable developer mode and use the `Import` window |
-| FPS Unlocker | Unlocks the Roblox client's FPS using Roblox's ClientAppSettings.json | Settings can be found by clicking the settings cog, then miscellaneous |
-| Bulk User Importing | Easily import your accounts by their username & password combos, or by cookies | Click the arrow on the right side of the `Add Account` button, then select user:pass/cookies |
-| Automatic Connection Loss Detection | Closes instances that are not connected to a server for a certain amount of time | To enable this, go to `Utilities`->`Watcher`, and make sure `Enable Roblox Watcher` is checked as well as `Exit if No Connection to Server` |
-| Automatic Cookie Refresh | Your accounts never become invalidated sitting in the account manager over long periods of time | As long you actively use account manager, your accounts will regularly get new cookies preventing them from being logged out, this does sign you out of other sessions though |
-| Join Group | Easily join groups with multiple accounts | Click the arrow on the right side of the `Open Browser` button, then click `Join Group` |
-| Auto Relaunch | Automatically relaunch your accounts if they are not in game/have been AFK kicked | Watch a youtube tutorial on how to use this. If you do not have an executor that works with Nexus.lua: click `Account Control`, go to `Settings`, then enable `Use Presence API` |
-| Quick Log In | Easily log in to an account on a different computer using Roblox's Quick Log In feature | Right click an account, then select `Quick Log In` |
-| AI Captcha Assistance | Assists you in the "Pick the image" captchas using the Nopecha API (Requires a subscription key) | You can enable auto solve, but it is not recommended to use, your best option is to add a captcha solving extension to the browser along with a BrowserConfig to automatically set the key per new browser opened |
-
-# Preview (Version 3.4)
-![github-large](Images/Image4.png)
-
-# Preview (Version 3.1)
-![github-large](Images/Image3.png)
-
-# Preview (Version 2.6)
-![github-large](Images/image2.png)
-
-# Preview (Old)
-![github-large](Images/Image1.png)
+**¿Cómo activo Multi Roblox?**
+Cierra todas las ventanas de Roblox, marca **Multi Roblox** abajo en la ventana principal o en Ajustes. Si sale "(bloqueado)", es que algún Roblox seguía abierto: ciérralo y haz clic en el aviso para reintentar.
+
+**¿Puedo unirme a servidores privados?**
+Sí. Pega el enlace en el campo Job ID o guárdalo en **Herramientas → Servidores privados**. Acepta el enlace clásico y el nuevo enlace para compartir. El dueño del servidor tiene que permitir las invitaciones.
+
+**¿Por qué no puedo seguir a un amigo a su juego?**
+Tiene que estar dentro de un juego y su privacidad tiene que dejar que tus cuentas se unan (normalmente, que sean amigos).
+
+**¿Por qué no puedo lanzar muchas cuentas seguidas?**
+Roblox limita las peticiones. Sube el **retraso entre cuentas** en Ajustes o usa un perfil de lanzamiento con más retraso.
+
+**¿Funciona en Mac o Linux?**
+No. Lanzar Roblox, Multi Roblox y el anti-AFK dependen de Windows.
+
+**¿Me pueden suspender por usarlo?**
+La app usa las mismas funciones que la web y el cliente de Roblox, pero algunos juegos prohíben las cuentas alternativas. Úsala bajo tu responsabilidad.
+
+**¿Dónde reporto un error o pido una función?**
+En [Issues](https://github.com/Nuulz/Roblox-Account-Manager/issues). Incluye capturas y los pasos para reproducirlo; el archivo `ram.log` junto al ejecutable ayuda mucho.
+
+## Créditos
+
+Basado en [Roblox Account Manager](https://github.com/ic3w0lf22/Roblox-Account-Manager) de **ic3w0lf22** y sus colaboradores. Licencia [GPL-3.0](LICENSE).
