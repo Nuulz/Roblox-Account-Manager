@@ -66,9 +66,9 @@
           <button id="btn-settings" class="icon" title="Ajustes">⚙</button>
         </div>
         <div class="rtabs">
-          <button data-rtab="launch" class="on">▶ Lanzador</button>
-          <button data-rtab="account">✎ Cuenta</button>
-          <button data-rtab="tools">✦ Herramientas</button>
+          <button data-rtab="launch" class="on">Lanzador</button>
+          <button data-rtab="account">Cuenta</button>
+          <button data-rtab="tools">Herramientas</button>
         </div>
 
         <div id="rpane-launch" class="rpane">
@@ -77,16 +77,16 @@
             <input id="place-id" inputmode="numeric">
             <button id="btn-shuffle" class="icon small" title="Servidor aleatorio si no hay Job ID">⇄</button>
             <input id="job-id">
-            <button id="btn-save-game" class="icon small" title="Guardar Place/Job en las cuentas seleccionadas">💾</button>
+            <button id="btn-save-game" class="small-text" title="Guardar Place/Job en las cuentas seleccionadas">Guardar</button>
           </div>
           <div class="r-row"><button id="btn-join" class="grow primary">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
           <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
           <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
-          <div class="r-row prof-quick"><span class="lbl">Perfil</span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">▶</button></div>
+          <div class="r-row prof-quick"><span class="lbl">Perfil</span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">Lanzar</button></div>
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
             <button id="btn-afk">Anti-AFK</button>
-            <button id="btn-find" class="span2">🔍 Buscar juego</button>
+            <button id="btn-find" class="span2">Buscar juego</button>
           </div>
         </div>
 
@@ -150,16 +150,17 @@
 
         <div id="rpane-tools" class="rpane hidden">
           <div class="tools">
-            <button class="tool" data-proxy="btn-servers"><b>🌐</b><span>Servidores</span><small>Explorar y filtrar</small></button>
-            <button class="tool" data-proxy="btn-games"><b>🎮</b><span>Juegos</span><small>Recientes y favoritos</small></button>
-            <button class="tool" data-proxy="btn-find"><b>🔍</b><span>Buscador de juegos</span><small>Buscar por nombre</small></button>
-            <button class="tool" data-proxy="btn-procs"><b>▤</b><span>Procesos</span><small>Ventanas de Roblox</small></button>
-            <button class="tool" data-proxy="btn-util"><b>📊</b><span>Estadísticas</span><small>Tiempo de juego</small></button>
-            <button class="tool" data-proxy="btn-add"><b>⇅</b><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
-            <button class="tool" data-proxy="btn-settings"><b>⚙</b><span>Ajustes</span><small>Multi Roblox, API</small></button>
-            <button class="tool" id="btn-health"><b>🩺</b><span>Salud y Robux</span><small>Cookies vencidas y Robux totales</small></button>
-            <button class="tool soon" disabled><b>👥</b><span>Grupos Roblox</span><small>Próximamente</small></button>
-            <button class="tool" id="btn-profiles"><b>⚡</b><span>Perfiles</span><small>Lanzar grupos de cuentas</small></button>
+            <button class="tool" data-proxy="btn-servers"><span>Servidores</span><small>Explorar y filtrar</small></button>
+            <button class="tool" data-proxy="btn-games"><span>Juegos</span><small>Recientes y favoritos</small></button>
+            <button class="tool" data-proxy="btn-find"><span>Buscador de juegos</span><small>Buscar por nombre</small></button>
+            <button class="tool" data-proxy="btn-procs"><span>Procesos</span><small>Ventanas de Roblox</small></button>
+            <button class="tool" data-proxy="btn-util"><span>Estadísticas</span><small>Tiempo de juego</small></button>
+            <button class="tool" data-proxy="btn-add"><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
+            <button class="tool" data-proxy="btn-settings"><span>Ajustes</span><small>Multi Roblox, API</small></button>
+            <button class="tool" id="btn-health"><span>Salud y Robux</span><small>Cookies vencidas y Robux totales</small></button>
+            <button class="tool soon" disabled><span>Grupos Roblox</span><small>Próximamente</small></button>
+            <button class="tool" id="btn-vips"><span>Servidores privados</span><small>Guardar enlaces y unirse</small></button>
+            <button class="tool" id="btn-profiles"><span>Perfiles</span><small>Lanzar grupos de cuentas</small></button>
           </div>
         </div>
       </div>
@@ -236,6 +237,26 @@
       </div>
       <div id="find-list" class="scroll find-list"></div>
       <div class="actions"><button id="find-more" class="hidden">Más resultados</button></div>
+    </div>
+  </div>
+
+  <div id="dlg-vips" class="overlay hidden">
+    <div class="card big wide">
+      <h2>Servidores privados <button class="close" data-close="dlg-vips">✕</button></h2>
+      <fieldset class="vip-form"><legend id="vip-form-title">Guardar un servidor</legend>
+        <div class="r-row">
+          <input id="vip-link" class="grow" placeholder="Enlace del servidor privado (roblox.com/share?code=… o …?privateServerLinkCode=…)">
+        </div>
+        <div class="r-row">
+          <input id="vip-name" class="grow" placeholder="Nombre (opcional, p. ej. Servidor del clan)">
+          <button id="vip-cancel-edit" class="hidden">Cancelar edición</button>
+          <button id="vip-save" class="primary">Guardar</button>
+        </div>
+        <span id="vip-err" class="err"></span>
+      </fieldset>
+      <div class="r-row"><span id="vip-sel" class="grow muted"></span></div>
+      <div id="vip-list" class="scroll vip-list"></div>
+      <p class="muted hl-note">Los enlaces compartidos nuevos se leen una vez al guardarlos, con la sesión de una de tus cuentas. Para que otras cuentas entren, la privacidad de invitaciones del dueño debe permitirlo.</p>
     </div>
   </div>
 

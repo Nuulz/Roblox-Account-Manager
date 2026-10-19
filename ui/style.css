@@ -256,3 +256,17 @@ td.num { text-align: right; padding-right: 10px; font-variant-numeric: tabular-n
 .fg .btns button { flex: 1; height: 22px; padding: 0 4px; }
 .fg .btns button.use { border-color: var(--sel); color: var(--timer); }
 .fg .btns button.fav { flex: 0 0 26px; }
+button.small-text { height: 22px; padding: 0 6px; font-size: 11px; }
+.right .r-row > #prof-quick-go { width: auto; }
+button.tool { padding: 8px 10px; }
+button.tool span { font-weight: 600; }
+
+.vip-form { margin: 0 0 6px; }
+.vip-list { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.vip { display: flex; align-items: center; gap: 8px; border: 1px solid var(--ctl-line); background: var(--ctl); padding: 6px 8px; }
+.vip img, .vip .noimg { width: 40px; height: 40px; flex: none; background: var(--list); object-fit: cover; }
+.vip .info { flex: 1; min-width: 0; }
+.vip .info b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vip .info span { color: var(--muted); font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vip button.go { border-color: var(--sel); color: var(--timer); }
+.vip.editing { border-color: var(--sel); }

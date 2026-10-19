@@ -902,7 +902,7 @@ function renderProfiles() {
       <div class="avs">${found.slice(0, 5).map(avImg).join('')}${found.length > 5 ? `<span class="more">+${found.length - 5}</span>` : ''}</div>
       <div class="info"><b>${esc(p.name)}</b>
         <span>${esc(T('{n} cuenta(s)', { n: found.length }))}${missing ? ` · <span style="color:var(--bad);display:inline">${esc(T('{n} ya no existe(n)', { n: missing }))}</span>` : ''} · Place ${p.placeId} · ${esc(where)} · ${esc(delay)}</span></div>
-      <button class="go" data-plaunch="${p.id}">▶ ${esc(T('Lanzar'))}</button><button data-pedit="${p.id}">${esc(T('Editar'))}</button><button data-pdel="${p.id}">✕</button>
+      <button class="go" data-plaunch="${p.id}">${esc(T('Lanzar'))}</button><button data-pedit="${p.id}">${esc(T('Editar'))}</button><button data-pdel="${p.id}">✕</button>
     </div>`;
   }).join('') : `<p class="muted" style="padding:8px">${esc(T('Todavía no hay perfiles. Selecciona cuentas en la lista y pulsa "Nuevo perfil".'))}</p>`;
 }
@@ -951,7 +951,7 @@ function peGame() {
   if (!id) return;
   peTimer = setTimeout(async () => {
     const name = await invoke('place_name', { placeId: id }).catch(() => null);
-    if (Number($('pe-place').value.trim()) === id) $('pe-game').textContent = name ? `🎮 ${name}` : T('No se encontró ese juego');
+    if (Number($('pe-place').value.trim()) === id) $('pe-game').textContent = name ? T('Juego: {name}', { name }) : T('No se encontró ese juego');
   }, 400);
 }
 $('pe-place').oninput = peGame;
@@ -1140,8 +1140,8 @@ async function findGames(more) {
         ${g.icon ? `<img src="${esc(g.icon)}" alt="" loading="lazy">` : '<div class="noimg"></div>'}
         <div class="body">
           <div class="nm" title="${esc(g.name)}">${esc(g.name)}</div>
-          <div class="meta"><b>● ${compact(g.players)}</b> ${esc(T('jugando'))}${g.likes != null ? ` · 👍 ${g.likes}%` : ''}</div>
-          ${g.creator ? `<div class="meta" title="${esc(g.creator)}">${esc(T('por {name}', { name: g.creator }))}${g.verified ? ' ✔' : ''}</div>` : ''}
+          <div class="meta"><b>${compact(g.players)}</b> ${esc(T('jugando'))}${g.likes != null ? ` · ${esc(T('{n}% le gusta', { n: g.likes }))}` : ''}</div>
+          ${g.creator ? `<div class="meta" title="${esc(g.creator)}">${esc(T('por {name}', { name: g.creator }))}${g.verified ? ` (${esc(T('verificado'))})` : ''}</div>` : ''}
           ${g.sponsored ? `<div class="tag">${esc(T('Patrocinado'))}</div>` : ''}
           <div class="btns">
             <button class="use" data-fuse="${g.placeId}">${esc(T('Usar'))}</button>
@@ -1199,6 +1199,84 @@ $('find-list').addEventListener('click', async (e) => {
     } catch (err) { toast('error', T(String(err))); }
   }
 });
+
+// ───────────────────────── servidores privados
+
+let vips = [];
+let vipEditing = 0;
+
+async function loadVips() {
+  vips = await invoke('vips_list').catch(() => []);
+  renderVips();
+}
+
+function vipSelText() {
+  const n = selected.size;
+  $('vip-sel').textContent = n ? T('Se unirán las {n} cuenta(s) seleccionadas en la lista.', { n }) : T('Selecciona cuentas en la lista para unirlas a un servidor.');
+}
+
+function renderVips() {
+  vipSelText();
+  $('vip-list').innerHTML = vips.length ? vips.map((v) => `
+    <div class="vip ${v.id === vipEditing ? 'editing' : ''}">
+      ${v.icon ? `<img src="${esc(v.icon)}" alt="">` : '<div class="noimg"></div>'}
+      <div class="info"><b>${esc(v.name)}</b><span>${esc(v.gameName || T('Juego desconocido'))} · Place ${v.placeId}</span></div>
+      <button class="go" data-vjoin="${v.id}">${esc(T('Unirse'))}</button>
+      <button data-vcopy="${v.id}">${esc(T('Copiar enlace'))}</button>
+      <button data-vedit="${v.id}">${esc(T('Editar'))}</button>
+      <button data-vdel="${v.id}" title="${esc(T('Eliminar'))}">✕</button>
+    </div>`).join('') : `<p class="muted" style="padding:8px">${esc(T('Todavía no hay servidores guardados. Pega un enlace arriba.'))}</p>`;
+}
+
+function vipForm(v) {
+  vipEditing = v?.id ?? 0;
+  $('vip-form-title').textContent = T(v ? 'Editar servidor' : 'Guardar un servidor');
+  $('vip-link').value = v?.link ?? '';
+  $('vip-name').value = v?.name ?? '';
+  $('vip-err').textContent = '';
+  $('vip-cancel-edit').classList.toggle('hidden', !v);
+  renderVips();
+}
+
+$('btn-vips').onclick = () => { vipForm(null); loadVips(); open('dlg-vips'); $('vip-link').focus(); };
+$('vip-cancel-edit').onclick = () => vipForm(null);
+$('vip-save').onclick = async () => {
+  const link = $('vip-link').value.trim();
+  if (!link) return $('vip-link').focus();
+  const sel = selectedAccounts();
+  const server = { ...(vips.find((v) => v.id === vipEditing) || {}), id: vipEditing, name: $('vip-name').value, link };
+  $('vip-save').disabled = true;
+  $('vip-err').textContent = T('Comprobando enlace…');
+  try {
+    const v = await invoke('vip_save', { server, userId: sel.length === 1 ? sel[0].userId : null });
+    toast('success', T('Servidor guardado: {name}', { name: v.name }));
+    vipForm(null);
+    loadVips();
+  } catch (e) { $('vip-err').textContent = T(String(e)); }
+  finally { $('vip-save').disabled = false; }
+};
+$('vip-link').onkeydown = $('vip-name').onkeydown = (e) => e.key === 'Enter' && $('vip-save').click();
+
+$('vip-list').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  const v = vips.find((x) => x.id === Number(d.vjoin || d.vcopy || d.vedit || d.vdel));
+  if (!v) return;
+  if (d.vjoin) {
+    const ids = orderedIds().filter((id) => selected.has(id));
+    if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+    if (ids.length > 1 && !await confirmBox(T('¿Unir {n} cuentas a "{name}"? Se abrirán {n} Roblox.', { n: ids.length, name: v.name }))) return;
+    try { await invoke('vip_join', { id: v.id, ids }); toast('info', T('Uniéndose a {name}', { name: v.name })); close('dlg-vips'); }
+    catch (err) { toast('error', T(String(err))); }
+  }
+  if (d.vcopy) { await navigator.clipboard.writeText(v.link); toast('success', T('Enlace copiado')); }
+  if (d.vedit) { vipForm(v); $('vip-name').focus(); }
+  if (d.vdel && await confirmBox(T('¿Eliminar "{name}" de tus servidores guardados?', { name: v.name }))) {
+    await invoke('vip_delete', { id: v.id }).catch((err) => toast('error', T(String(err))));
+    if (vipEditing === v.id) vipForm(null);
+    loadVips();
+  }
+});
+$('rows').addEventListener('click', () => { if (!$('dlg-vips').classList.contains('hidden')) vipSelText(); });
 
 // ───────────────────────── idioma
 

@@ -494,6 +494,33 @@ impl Api {
         v["privateServerInviteData"]["linkCode"].as_str().map(str::to_string)
     }
 
+    /// Resuelve un enlace `roblox.com/share?code=...&type=Server` a (placeId, privateServerLinkCode).
+    pub async fn resolve_server_share_link(&self, cookie: &str, code: &str) -> Result<(i64, String)> {
+        let resp = self
+            .authed(Method::POST, "https://apis.roblox.com/sharelinks/v1/resolve-link", cookie)
+            .await?
+            .json(&json!({ "linkId": code, "linkType": "Server" }))
+            .send()
+            .await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if status == StatusCode::UNAUTHORIZED {
+            bail!("La cuenta usada para leer el enlace no tiene sesión válida");
+        }
+        if !status.is_success() {
+            bail!("Roblox no aceptó el enlace [{}]: {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
+        let data = &v["privateServerInviteData"];
+        match (data["placeId"].as_i64(), data["linkCode"].as_str()) {
+            (Some(place), Some(link)) if place > 0 && !link.is_empty() => Ok((place, link.to_string())),
+            _ => {
+                let state = data["status"].as_str().unwrap_or("desconocido");
+                bail!("El enlace compartido no es válido o caducó (estado: {state})")
+            }
+        }
+    }
+
     pub async fn private_server_privacy_is_everyone(&self, cookie: &str) -> Option<bool> {
         let resp = self
             .req(Method::GET, "https://www.roblox.com/account/settings/private-server-invite-privacy", Some(cookie))

@@ -15,6 +15,7 @@ mod state;
 mod storage;
 mod updater;
 mod util;
+mod vips;
 mod webserver;
 
 use ops::{CmdResult, JoinRequest};
@@ -446,6 +447,33 @@ fn health_cancel() {
     health::cancel();
 }
 
+// ─────────────────────────────────── servidores privados
+
+#[tauri::command]
+fn vips_list() -> Vec<vips::PrivateServer> {
+    vips::list()
+}
+
+#[tauri::command]
+async fn vip_resolve(link: String, user_id: Option<i64>) -> CmdResult<vips::PrivateServer> {
+    vips::resolve(&link, user_id).await
+}
+
+#[tauri::command]
+async fn vip_save(server: vips::PrivateServer, user_id: Option<i64>) -> CmdResult<vips::PrivateServer> {
+    vips::upsert(server, user_id).await
+}
+
+#[tauri::command]
+fn vip_delete(id: i64) -> CmdResult<()> {
+    vips::delete(id)
+}
+
+#[tauri::command]
+async fn vip_join(id: i64, ids: Vec<i64>) -> CmdResult<()> {
+    vips::join(id, ids).await
+}
+
 // ─────────────────────────────────── perfiles de lanzamiento
 
 #[tauri::command]
@@ -599,6 +627,12 @@ pub fn run() {
             health_check,
             health_last,
             health_cancel,
+            // servidores privados
+            vips_list,
+            vip_resolve,
+            vip_save,
+            vip_delete,
+            vip_join,
             // perfiles
             profiles_list,
             profile_save,
