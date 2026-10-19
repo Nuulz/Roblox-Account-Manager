@@ -1,0 +1,62 @@
+name: Release
+
+# Compila en Windows y publica un release con la versión de tauri.conf.json.
+# Se ejecuta a mano o cuando un commit en master incluye "[release]" en el mensaje.
+# El actualizador de la app descarga el primer .zip del release "latest" (el Portable).
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leer versión
+        shell: pwsh
+        run: |
+          $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "TAG=$v" >> $env:GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Instalar tauri-cli
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Compilar
+        working-directory: src-tauri
+        run: cargo tauri build
+
+      - name: Empaquetar
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          New-Item -ItemType Directory -Force portable | Out-Null
+          Copy-Item src-tauri/target/release/roblox-account-manager.exe "portable/Roblox Account Manager.exe"
+          # El .zip va primero: es el que usa el actualizador
+          Compress-Archive -Path "portable/*" -DestinationPath "dist/Roblox.Account.Manager.$env:TAG.Portable.zip"
+          $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          Copy-Item $installer.FullName "dist/Roblox.Account.Manager.$env:TAG.Setup.exe"
+          Get-ChildItem dist | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+
+      - name: Publicar release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: Roblox Account Manager ${{ env.TAG }}
+          make_latest: true
+          files: |
+            dist/*.zip
+            dist/*.exe
+          body_path: CHANGELOG-release.md
