@@ -740,6 +740,9 @@ impl Api {
             .await?
             .json()
             .await?;
+        if v["errors"].is_array() {
+            bail!("No se pudieron leer los trajes: {}", error_message(&v.to_string()));
+        }
         Ok(v["data"]
             .as_array()
             .into_iter()
@@ -767,12 +770,15 @@ impl Api {
     }
 
     pub async fn outfit_details(&self, outfit_id: i64) -> Result<Value> {
-        Ok(self
+        let resp = self
             .req(Method::GET, &format!("https://avatar.roblox.com/v1/outfits/{outfit_id}/details"), None)
             .send()
-            .await?
-            .json()
-            .await?)
+            .await?;
+        if !resp.status().is_success() {
+            let body = resp.text().await.unwrap_or_default();
+            bail!("No se pudo leer el traje: {}", error_message(&body));
+        }
+        Ok(resp.json().await?)
     }
 
     pub async fn asset_names(&self, ids: &[i64]) -> HashMap<i64, String> {
