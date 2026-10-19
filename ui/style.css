@@ -166,3 +166,15 @@ button.lnk { border: none; background: none; color: var(--timer); text-decoratio
 .avatar-msg { text-align: center; font-size: 11px; }
 #utab-avatar { padding: 0; overflow: hidden; }
 .bl { padding: 3px 0; border-bottom: 1px solid var(--head-line); }
+
+.rtabs { display: flex; border-bottom: 1px solid var(--ctl-line); margin-top: 2px; }
+.rtabs button { flex: 1; border: none; border-bottom: 2px solid transparent; background: none; height: 28px; color: var(--muted); }
+.rtabs button:hover { color: var(--text); background: var(--ctl-hover); }
+.rtabs button.on { color: var(--timer); border-bottom-color: var(--sel); }
+.rpane { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; padding-top: 6px; }
+.rpane .r-labels { margin-top: 0; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; overflow: auto; }
+button.tool { height: auto; padding: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; white-space: normal; }
+button.tool b { font-size: 18px; font-weight: normal; }
+button.tool small { color: var(--muted); font-size: 10px; }
+button.tool.soon { border-style: dashed; }

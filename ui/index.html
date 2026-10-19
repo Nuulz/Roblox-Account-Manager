@@ -65,23 +65,49 @@
           <button id="btn-theme" class="icon" title="Modo claro / oscuro">◐</button>
           <button id="btn-settings" class="icon" title="Ajustes">⚙</button>
         </div>
-        <div class="r-labels"><span>Place ID</span><span>Job ID</span></div>
-        <div class="r-ids">
-          <input id="place-id" inputmode="numeric">
-          <button id="btn-shuffle" class="icon small" title="Servidor aleatorio si no hay Job ID">⇄</button>
-          <input id="job-id">
-          <button id="btn-save-game" class="icon small" title="Guardar Place/Job en las cuentas seleccionadas">💾</button>
+        <div class="rtabs">
+          <button data-rtab="launch" class="on">▶ Lanzador</button>
+          <button data-rtab="account">✎ Cuenta</button>
+          <button data-rtab="tools">✦ Herramientas</button>
         </div>
-        <div class="r-row"><button id="btn-join" class="grow">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
-        <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
-        <div class="r-row"><input id="alias" class="grow" placeholder="Alias"><button id="btn-alias">Poner alias</button></div>
-        <textarea id="desc" placeholder="Descripción"></textarea>
-        <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
-        <div class="r-grid">
-          <button id="btn-desc">Guardar descripción</button>
-          <button id="btn-games">Juegos recientes</button>
-          <button id="btn-afk">Anti-AFK</button>
-          <button id="btn-util">Utilidades de cuenta</button>
+
+        <div id="rpane-launch" class="rpane">
+          <div class="r-labels"><span>Place ID</span><span>Job ID</span></div>
+          <div class="r-ids">
+            <input id="place-id" inputmode="numeric">
+            <button id="btn-shuffle" class="icon small" title="Servidor aleatorio si no hay Job ID">⇄</button>
+            <input id="job-id">
+            <button id="btn-save-game" class="icon small" title="Guardar Place/Job en las cuentas seleccionadas">💾</button>
+          </div>
+          <div class="r-row"><button id="btn-join" class="grow primary">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
+          <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
+          <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
+          <div class="r-grid">
+            <button id="btn-games">Juegos recientes</button>
+            <button id="btn-afk">Anti-AFK</button>
+          </div>
+        </div>
+
+        <div id="rpane-account" class="rpane hidden">
+          <div class="r-row"><input id="alias" class="grow" placeholder="Alias"><button id="btn-alias">Poner alias</button></div>
+          <textarea id="desc" placeholder="Descripción"></textarea>
+          <div class="r-grid">
+            <button id="btn-desc">Guardar descripción</button>
+            <button id="btn-util">Utilidades de cuenta</button>
+          </div>
+        </div>
+
+        <div id="rpane-tools" class="rpane hidden">
+          <div class="tools">
+            <button class="tool" data-proxy="btn-servers"><b>🌐</b><span>Servidores</span><small>Explorar y filtrar</small></button>
+            <button class="tool" data-proxy="btn-games"><b>🎮</b><span>Juegos</span><small>Recientes y favoritos</small></button>
+            <button class="tool" data-proxy="btn-procs"><b>▤</b><span>Procesos</span><small>Ventanas de Roblox</small></button>
+            <button class="tool" data-proxy="btn-util"><b>📊</b><span>Estadísticas</span><small>Tiempo de juego</small></button>
+            <button class="tool" data-proxy="btn-add"><b>⇅</b><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
+            <button class="tool" data-proxy="btn-settings"><b>⚙</b><span>Ajustes</span><small>Multi Roblox, API</small></button>
+            <button class="tool soon" disabled><b>👥</b><span>Grupos Roblox</span><small>Próximamente</small></button>
+            <button class="tool soon" disabled><b>⚡</b><span>Perfiles</span><small>Próximamente</small></button>
+          </div>
         </div>
       </div>
     </div>

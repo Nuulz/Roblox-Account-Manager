@@ -748,3 +748,16 @@ async function loadMain() {
 }
 
 invoke('vault_startup').then(showVault).catch((e) => toast('error', e));
+
+// ───────────────────────── pestañas del panel derecho
+
+document.querySelectorAll('[data-rtab]').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('[data-rtab]').forEach((x) => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.rpane').forEach((p) => p.classList.toggle('hidden', p.id !== `rpane-${b.dataset.rtab}`));
+});
+document.querySelectorAll('[data-proxy]').forEach((b) => b.onclick = (e) => {
+  e.stopPropagation();
+  const t = $(b.dataset.proxy);
+  const r = b.getBoundingClientRect();
+  t.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left, clientY: r.bottom }));
+});
