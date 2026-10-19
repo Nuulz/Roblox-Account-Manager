@@ -601,6 +601,10 @@ fn init_log() {
         // Por defecto simplelog escribe la hora en UTC; se usa la hora local del equipo
         let mut cfg = ConfigBuilder::new();
         let _ = cfg.set_time_offset_to_local();
+        // Fecha, hora y desfase respecto a UTC, p. ej. "2026-10-19 19:44:52 UTC-03:00"
+        cfg.set_time_format_custom(simplelog::format_description!(
+            "[year]-[month]-[day] [hour]:[minute]:[second] UTC[offset_hour sign:mandatory]:[offset_minute]"
+        ));
         let _ = WriteLogger::init(LevelFilter::Info, cfg.build(), f);
     }
     log::info!("Roblox Account Manager {} iniciado", env!("CARGO_PKG_VERSION"));
