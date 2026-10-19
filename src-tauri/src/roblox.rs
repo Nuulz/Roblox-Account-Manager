@@ -543,6 +543,11 @@ impl Api {
         out
     }
 
+    /// Imagen de cuerpo entero del avatar de un usuario.
+    pub async fn avatar_image(&self, user_id: i64) -> Option<String> {
+        self.thumbnails("users/avatar", "userIds", &[user_id], "420x420").await.remove(&user_id)
+    }
+
     pub async fn asset_icons(&self, ids: &[i64]) -> HashMap<i64, String> {
         self.thumbnails("assets", "assetIds", ids, "150x150").await
     }

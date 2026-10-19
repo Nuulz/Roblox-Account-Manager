@@ -509,6 +509,27 @@ const I18N_EN = {
   'Peligroso: otros equipos de tu red podrían conectarse al servidor web de la app.': "Dangerous: other computers on your network could connect to the app's web server.",
   'Quién puede usar "Seguir" para unirse al juego en el que estás.': 'Who can use "Follow" to join the game you are in.',
 
+  // copiar avatar
+  'Copiar avatar': 'Copy avatar',
+  'Mismo avatar en varias cuentas': 'Same avatar on several accounts',
+  'Avatar de origen': 'Source avatar',
+  'Pone a las cuentas seleccionadas la misma ropa, colores, escalas y tipo de cuerpo que el avatar de origen. Solo se ponen los objetos que cada cuenta ya tiene: no se compra nada.': 'Gives the selected accounts the same clothes, colors, scales and body type as the source avatar. Only items each account already owns are worn: nothing is bought.',
+  'o': 'or',
+  'Nombre de otro usuario de Roblox': "Another Roblox user's name",
+  'Ver avatar': 'View avatar',
+  'Aplicar a las seleccionadas': 'Apply to selected',
+  'Se aplicará a {n} cuenta(s) seleccionadas.': 'It will be applied to {n} selected account(s).',
+  'Selecciona en la lista las cuentas que recibirán el avatar.': 'Select in the list the accounts that will get the avatar.',
+  'Elige una cuenta o escribe un usuario': 'Pick an account or type a user',
+  'Tipo de cuerpo: {t}': 'Body type: {t}',
+  'Este avatar no lleva objetos.': 'This avatar has no items.',
+  'Una de tus cuentas…': 'One of your accounts…',
+  '¿Cambiar el avatar de {n} cuenta(s)? Su avatar actual se reemplaza; si quieres conservarlo, guárdalo antes como traje en Roblox.': "Change the avatar of {n} account(s)? Their current avatar is replaced; if you want to keep it, save it as an outfit on Roblox first.",
+  'Aplicando, una cuenta por segundo…': 'Applying, one account per second…',
+  'aplicado; {n} objeto(s) no se pusieron porque la cuenta no los tiene': "applied; {n} item(s) weren't worn because the account doesn't own them",
+  'aplicado': 'applied',
+  'Selecciona al menos una cuenta distinta de la de origen': 'Select at least one account other than the source',
+
   // mensajes fijos del backend
   'Cuenta no encontrada': 'Account not found',
   'La aplicación no está lista': 'The app is not ready yet',

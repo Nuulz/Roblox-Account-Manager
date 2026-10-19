@@ -1391,6 +1391,68 @@ $('inv-rows').addEventListener('click', (e) => {
   if (d.iopen) invoke('browser_open', { userId: Number(d.iuser), path: `/catalog/${d.iopen}` }).catch((err) => toast('error', T(String(err))));
 });
 
+// ───────────────────────── copiar avatar
+
+let avSource = null;
+
+function avSelText() {
+  const n = orderedIds().filter((id) => selected.has(id) && id !== avSource).length;
+  $('av-sel').textContent = n ? T('Se aplicará a {n} cuenta(s) seleccionadas.', { n }) : T('Selecciona en la lista las cuentas que recibirán el avatar.');
+  $('av-apply').disabled = !avSource || !n;
+}
+
+async function loadAvatarSource() {
+  const name = $('av-src-user').value.trim();
+  let id = Number($('av-src-acc').value) || null;
+  $('av-load').disabled = true;
+  $('av-items').innerHTML = `<div class="muted">${esc(T('Cargando…'))}</div>`;
+  $('av-res').innerHTML = '';
+  try {
+    if (name) id = /^\d+$/.test(name) ? Number(name) : await invoke('user_id_by_name', { username: name });
+    if (!id) throw T('Elige una cuenta o escribe un usuario');
+    const p = await invoke('avatar_preview', { userId: id });
+    avSource = id;
+    $('av-img').src = p.image || '';
+    $('av-type').textContent = p.avatarType ? T('Tipo de cuerpo: {t}', { t: p.avatarType }) : '';
+    $('av-items').innerHTML = p.items.length
+      ? p.items.map(([, n, t]) => `<div><span title="${esc(n)}">${esc(n)}</span><span>${esc(t)}</span></div>`).join('')
+      : `<div class="muted">${esc(T('Este avatar no lleva objetos.'))}</div>`;
+  } catch (e) {
+    avSource = null;
+    $('av-img').src = '';
+    $('av-type').textContent = '';
+    $('av-items').innerHTML = `<div class="err">${esc(T(String(e)))}</div>`;
+  } finally { $('av-load').disabled = false; avSelText(); }
+}
+
+$('btn-avcopy').onclick = () => {
+  $('av-src-acc').innerHTML = `<option value="">${esc(T('Una de tus cuentas…'))}</option>` + accounts.map((a) => `<option value="${a.userId}">${esc(accName(a))}</option>`).join('');
+  avSelText();
+  open('dlg-avcopy');
+};
+$('av-src-acc').onchange = () => { if ($('av-src-acc').value) { $('av-src-user').value = ''; loadAvatarSource(); } };
+$('av-src-user').oninput = () => { if ($('av-src-user').value) $('av-src-acc').value = ''; };
+$('av-src-user').onkeydown = (e) => e.key === 'Enter' && loadAvatarSource();
+$('av-load').onclick = loadAvatarSource;
+$('av-apply').onclick = async () => {
+  const targets = orderedIds().filter((id) => selected.has(id) && id !== avSource);
+  if (!avSource || !targets.length) return;
+  if (!await confirmBox(T('¿Cambiar el avatar de {n} cuenta(s)? Su avatar actual se reemplaza; si quieres conservarlo, guárdalo antes como traje en Roblox.', { n: targets.length }))) return;
+  $('av-apply').disabled = true;
+  $('av-res').innerHTML = `<span class="muted">${esc(T('Aplicando, una cuenta por segundo…'))}</span>`;
+  try {
+    const res = await invoke('avatar_copy', { source: avSource, targets });
+    $('av-res').innerHTML = res.map((r) => {
+      const a = accounts.find((x) => x.userId === r.userId);
+      const who = esc(a ? (a.alias || a.username) : r.userId);
+      if (!r.ok) return `<span class="bad">${who}: ${esc(T(r.error))}</span>`;
+      return `<span class="ok">${who}: ${esc(r.missing ? T('aplicado; {n} objeto(s) no se pusieron porque la cuenta no los tiene', { n: r.missing }) : T('aplicado'))}</span>`;
+    }).join('');
+  } catch (e) { $('av-res').innerHTML = `<span class="bad">${esc(T(String(e)))}</span>`; }
+  finally { avSelText(); }
+};
+$('rows').addEventListener('click', () => { if (!$('dlg-avcopy').classList.contains('hidden')) avSelText(); });
+
 // ───────────────────────── amigos conectados
 
 let frData = null;

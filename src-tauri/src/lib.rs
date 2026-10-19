@@ -1,4 +1,5 @@
 mod account;
+mod avatars;
 mod browser;
 mod clientsettings;
 mod crypto;
@@ -451,6 +452,18 @@ fn health_cancel() {
     health::cancel();
 }
 
+// ─────────────────────────────────── copiar avatar
+
+#[tauri::command]
+async fn avatar_preview(user_id: i64) -> CmdResult<avatars::Preview> {
+    avatars::preview(user_id).await
+}
+
+#[tauri::command]
+async fn avatar_copy(source: i64, targets: Vec<i64>) -> CmdResult<Vec<avatars::Applied>> {
+    avatars::apply(source, targets).await
+}
+
 // ─────────────────────────────────── amigos
 
 #[tauri::command]
@@ -662,6 +675,9 @@ pub fn run() {
             health_check,
             health_last,
             health_cancel,
+            // copiar avatar
+            avatar_preview,
+            avatar_copy,
             // amigos
             friends_overview,
             // inventario y usuarios
