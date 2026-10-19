@@ -20,7 +20,7 @@ function ask(title, text, { password = false, value = '' } = {}) {
   });
 }
 
-const confirmBox = (msg) => dialog.ask(msg, { title: 'Roblox Account Manager', kind: 'warning', okLabel: 'Sí', cancelLabel: 'No' });
+const confirmBox = (msg) => dialog.ask(msg, { title: 'Roblox Account Manager', kind: 'warning', okLabel: T('Sí'), cancelLabel: T('No') });
 
 let accounts = [];
 let settings = null;
@@ -71,7 +71,7 @@ function showVault(info) {
   const panel = { locked: 'vault-locked', legacyLocked: 'vault-legacy', setup: 'vault-setup' }[info.status];
   $(panel).classList.remove('hidden');
   if (info.status === 'setup' && info.migrated > 0) {
-    $('setup-msg').textContent = `Se importaron ${info.migrated} cuentas. Elige cómo protegerlas.`;
+    $('setup-msg').textContent = T('Se importaron {n} cuentas. Elige cómo protegerlas.', { n: info.migrated });
   }
   $(panel).querySelector('input')?.focus();
 }
@@ -109,8 +109,8 @@ function dotClass(a) {
 }
 
 function dotTitle(a) {
-  if (a.needsLogin) return 'Requiere iniciar sesión otra vez';
-  return { 0: 'Desconectado', 1: 'En línea', 2: `En juego${a.presenceLocation ? `: ${a.presenceLocation}` : ''}`, 3: 'En Studio' }[a.presenceType] || '';
+  if (a.needsLogin) return T('Requiere iniciar sesión otra vez');
+  return { 0: T('Desconectado'), 1: T('En línea'), 2: `${T('En juego')}${a.presenceLocation ? `: ${a.presenceLocation}` : ''}`, 3: T('En Studio') }[a.presenceType] || '';
 }
 
 function timer(a) {
@@ -223,6 +223,11 @@ document.addEventListener('click', () => close('ctx'));
 $('ctx').addEventListener('click', (e) => {
   const act = e.target.dataset.act;
   if (act === 'join') join();
+  else if (act === 'browser') {
+    const sel = selectedAccounts();
+    if (sel.length > 3) toast('info', T('Se abren solo las 3 primeras cuentas seleccionadas'));
+    sel.slice(0, 3).forEach((a) => invoke('browser_open', { userId: a.userId }).catch((err) => toast('error', err)));
+  }
   else if (act === 'copy-user') copy(selectedAccounts().map((a) => a.username));
   else if (act?.startsWith('copy-')) copySecret(act.slice(5));
   else if (act === 'group') openGroup();
@@ -233,14 +238,14 @@ $('ctx').addEventListener('click', (e) => {
 
 async function copy(lines) {
   await navigator.clipboard.writeText(lines.join('\n'));
-  toast('success', lines.length === 1 ? 'Copiado' : `${lines.length} líneas copiadas`);
+  toast('success', lines.length === 1 ? T('Copiado') : T('{n} líneas copiadas', { n: lines.length }));
 }
 
 async function copySecret(kind) {
   try {
     const out = [];
     for (const a of selectedAccounts()) out.push(await invoke('account_secret', { userId: a.userId, kind }));
-    if (kind === 'password' && out.every((p) => !p)) return toast('error', 'No hay contraseña guardada');
+    if (kind === 'password' && out.every((p) => !p)) return toast('error', T('No hay contraseña guardada'));
     copy(out);
   } catch (e) { toast('error', e); }
 }
@@ -254,25 +259,25 @@ async function update(view) {
 
 function needOne() {
   const sel = selectedAccounts();
-  if (sel.length !== 1) { toast('error', 'Selecciona una cuenta'); return null; }
+  if (sel.length !== 1) { toast('error', T('Selecciona una cuenta')); return null; }
   return sel[0];
 }
 
 $('btn-alias').onclick = () => { const a = needOne(); if (a) update({ userId: a.userId, alias: $('alias').value.trim() }); };
 $('alias').onkeydown = (e) => e.key === 'Enter' && $('btn-alias').click();
-$('btn-desc').onclick = () => { const a = needOne(); if (a) update({ userId: a.userId, description: $('desc').value }).then(() => toast('success', 'Descripción guardada')); };
+$('btn-desc').onclick = () => { const a = needOne(); if (a) update({ userId: a.userId, description: $('desc').value }).then(() => toast('success', T('Descripción guardada'))); };
 
 async function toggleAfk() {
   const sel = selectedAccounts();
-  if (!sel.length) return toast('error', 'Selecciona al menos una cuenta');
+  if (!sel.length) return toast('error', T('Selecciona al menos una cuenta'));
   const on = !sel.every((a) => a.antiAfk);
   for (const a of sel) await update({ userId: a.userId, antiAfk: on });
-  toast('success', `Anti-AFK ${on ? 'activado' : 'desactivado'} en ${sel.length} cuenta(s)`);
+  toast('success', T(on ? 'Anti-AFK activado en {n} cuenta(s)' : 'Anti-AFK desactivado en {n} cuenta(s)', { n: sel.length }));
 }
 $('btn-afk').onclick = toggleAfk;
 
 function openGroup() {
-  if (!selected.size) return toast('error', 'Selecciona al menos una cuenta');
+  if (!selected.size) return toast('error', T('Selecciona al menos una cuenta'));
   $('group-list').innerHTML = [...new Set(accounts.map((a) => a.group))].map((g) => `<option value="${esc(g)}">`).join('');
   $('group-name').value = '';
   open('dlg-group');
@@ -289,7 +294,7 @@ $('group-name').onkeydown = (e) => e.key === 'Enter' && $('group-ok').click();
 async function removeSelected() {
   const sel = selectedAccounts();
   if (!sel.length) return;
-  if (!await confirmBox(sel.length === 1 ? `¿Eliminar ${sel[0].username}?` : `¿Eliminar ${sel.length} cuentas?`)) return;
+  if (!await confirmBox(sel.length === 1 ? T('¿Eliminar {name}?', { name: sel[0].username }) : T('¿Eliminar {n} cuentas?', { n: sel.length }))) return;
   for (const a of sel) await invoke('account_remove', { userId: a.userId });
   selected.clear();
   fillFields();
@@ -298,11 +303,11 @@ $('btn-remove').onclick = removeSelected;
 
 $('btn-save-game').onclick = async () => {
   const sel = selectedAccounts();
-  if (!sel.length) return toast('error', 'Selecciona al menos una cuenta');
+  if (!sel.length) return toast('error', T('Selecciona al menos una cuenta'));
   for (const a of sel) {
     await update({ userId: a.userId, fields: { ...a.fields, SavedPlaceId: $('place-id').value.trim(), SavedJobId: $('job-id').value.trim() } });
   }
-  toast('success', 'Place/Job guardado en la cuenta');
+  toast('success', T('Place/Job guardado en la cuenta'));
 };
 
 // ───────────────────────── agregar
@@ -319,32 +324,33 @@ $('btn-add').onclick = (e) => {
 document.addEventListener('click', () => close('add-menu'));
 $('add-menu').addEventListener('click', (e) => {
   const what = e.target.dataset.add;
+  if (what === 'login') invoke('browser_login').then(() => toast('info', T('Inicia sesión en la ventana nueva; la cuenta se agregará sola.'))).catch((err) => toast('error', err));
   if (what === 'cookie') { open('dlg-add'); $('add-cookie').focus(); }
   if (what === 'import') importFile();
   if (what === 'export') exportFile();
 });
 
 async function importFile() {
-  const path = await dialog.open({ title: 'Importar cuentas', filters: [{ name: 'Cuentas', extensions: ['json', 'dat'] }] });
+  const path = await dialog.open({ title: T('Importar cuentas'), filters: [{ name: T('Cuentas'), extensions: ['json', 'dat'] }] });
   if (!path) return;
   let password = null;
   for (;;) {
     try {
       const n = await invoke('storage_import', { path, password });
-      return toast('success', `${n} cuentas importadas`);
+      return toast('success', T('{n} cuentas importadas', { n }));
     } catch (e) {
       if (!String(e).toLowerCase().includes('contraseña')) return toast('error', e);
-      password = await ask('Importar cuentas', String(e), { password: true });
+      password = await ask(T('Importar cuentas'), String(e), { password: true });
       if (password === null) return;
     }
   }
 }
 
 async function exportFile() {
-  if (!await confirmBox('El archivo exportado NO va cifrado: incluye cookies y contraseñas en texto plano. ¿Continuar?')) return;
-  const path = await dialog.save({ title: 'Exportar cuentas', defaultPath: 'cuentas.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
+  if (!await confirmBox(T('El archivo exportado NO va cifrado: incluye cookies y contraseñas en texto plano. ¿Continuar?'))) return;
+  const path = await dialog.save({ title: T('Exportar cuentas'), defaultPath: T('cuentas.json'), filters: [{ name: 'JSON', extensions: ['json'] }] });
   if (!path) return;
-  try { toast('success', `${await invoke('storage_export', { path })} cuentas exportadas`); }
+  try { toast('success', T('{n} cuentas exportadas', { n: await invoke('storage_export', { path }) })); }
   catch (e) { toast('error', e); }
 }
 $('add-cancel').onclick = closeAdd;
@@ -352,7 +358,7 @@ $('add-ok').onclick = async () => {
   $('add-ok').disabled = true;
   try {
     const v = await invoke('account_add', { cookie: $('add-cookie').value, password: $('add-pass').value });
-    toast('success', `Cuenta ${v.username} agregada`);
+    toast('success', T('Cuenta {name} agregada', { name: v.username }));
     closeAdd();
   } catch (e) { $('add-err').textContent = e; }
   finally { $('add-ok').disabled = false; }
@@ -367,22 +373,22 @@ function launch(ids, args) {
 
 function join() {
   const ids = orderedIds().filter((id) => selected.has(id));
-  if (!ids.length) return toast('error', 'Selecciona al menos una cuenta');
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
   const placeId = Number($('place-id').value.trim());
-  if (!placeId) return toast('error', 'Escribe un Place ID');
+  if (!placeId) return toast('error', T('Escribe un Place ID'));
   launch(ids, { placeId, jobId: $('job-id').value.trim(), followUser: false, joinVip: false });
 }
 $('btn-join').onclick = join;
 
 $('btn-follow').onclick = async () => {
   const ids = orderedIds().filter((id) => selected.has(id));
-  if (!ids.length) return toast('error', 'Selecciona al menos una cuenta');
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
   const name = $('follow-user').value.trim();
-  if (!name) return toast('error', 'Escribe el usuario a seguir');
+  if (!name) return toast('error', T('Escribe el usuario a seguir'));
   try {
     const userId = await invoke('user_id_by_name', { username: name });
     launch(ids, { placeId: userId, jobId: '', followUser: true, joinVip: false });
-  } catch (e) { toast('error', `No se encontró ${name}: ${e}`); }
+  } catch (e) { toast('error', T('No se encontró {name}: {err}', { name, err: e })); }
 };
 $('follow-user').onkeydown = (e) => e.key === 'Enter' && $('btn-follow').click();
 $('btn-cancel').onclick = () => invoke('launch_cancel');
@@ -411,15 +417,15 @@ async function showMulti() {
   const active = await invoke('multi_roblox_status');
   $('multi-chk').checked = !!want;
   const el = $('multi');
-  el.textContent = !want ? '' : active ? '(activo)' : '(bloqueado)';
+  el.textContent = !want ? '' : active ? T('(activo)') : T('(bloqueado)');
   el.className = `multi-state ${!want ? '' : active ? 'on' : 'bad'}`;
-  el.title = want && !active ? 'Roblox u otro programa ya lo tiene. Cierra Roblox y haz clic para reintentar.' : '';
+  el.title = want && !active ? T('Roblox u otro programa ya lo tiene. Cierra Roblox y haz clic para reintentar.') : '';
 }
 $('multi-chk').onchange = (e) => saveSettings((s) => { s.general.enableMultiRoblox = e.target.checked; });
 $('multi').onclick = async (e) => {
   e.preventDefault();
   if (!$('multi').classList.contains('bad')) return;
-  try { await invoke('multi_roblox_apply'); toast('success', 'Multi Roblox activado'); }
+  try { await invoke('multi_roblox_apply'); toast('success', T('Multi Roblox activado')); }
   catch (err) { toast('error', err); }
   showMulti();
 };
@@ -437,7 +443,7 @@ async function loadServers(more) {
   const placeId = Number($('srv-place').value.trim());
   if (!placeId) return;
   if (!more) { $('srv-rows').innerHTML = ''; srvCursor = null; }
-  $('srv-msg').textContent = 'Cargando…';
+  $('srv-msg').textContent = T('Cargando…');
   try {
     const page = await invoke('servers_list', { placeId, cursor: srvCursor ?? '' });
     srvCursor = page.nextCursor;
@@ -448,11 +454,11 @@ async function loadServers(more) {
       return `<tr class="${mine.length ? 'mine' : ''}" title="Job ID: ${esc(s.id)}">
         <td><div class="bar"><i style="width:${pct}%"></i><span>${s.playing}/${s.maxPlayers}</span></div></td>
         <td>${s.ping}</td><td>${Math.round(s.fps)}</td>
-        <td class="region" data-region="${esc(s.id)}"><button class="lnk" data-reg="${esc(s.id)}">ver</button></td>
+        <td class="region" data-region="${esc(s.id)}"><button class="lnk" data-reg="${esc(s.id)}">${T('ver')}</button></td>
         <td class="mine-cell">${mine.map((a) => `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}`).join(', ')}</td>
-        <td><button data-job="${esc(s.id)}">Usar</button></td></tr>`;
+        <td><button data-job="${esc(s.id)}">${T('Usar')}</button></td></tr>`;
     }).join(''));
-    $('srv-msg').textContent = `${$('srv-rows').children.length} servidores`;
+    $('srv-msg').textContent = T('{n} servidores', { n: $('srv-rows').children.length });
   } catch (e) { $('srv-msg').textContent = e; }
 }
 $('btn-servers').onclick = () => { open('dlg-servers'); $('srv-place').value ||= $('place-id').value; $('srv-place').focus(); };
@@ -492,9 +498,9 @@ function renderGames() {
   $('games-list').innerHTML = list.length ? list.map((g) => `
     <div class="game" data-place="${g.placeId}" data-ps="${esc(g.privateServer)}" title="${esc(g.name)}">
       <img src="${esc(g.icon)}" alt="">
-      <button class="star" data-fav="${g.placeId}" title="Favorito">${favIds.has(g.placeId) ? '★' : '☆'}</button>
+      <button class="star" data-fav="${g.placeId}" title="${T('Favorito')}">${favIds.has(g.placeId) ? '★' : '☆'}</button>
       <div class="t">${esc(g.name)}</div>
-    </div>`).join('') : `<p class="muted" style="padding:8px">${gamesTab === 'recent' ? 'Aún no hay juegos recientes.' : 'Marca juegos con ☆ en Recientes.'}</p>`;
+    </div>`).join('') : `<p class="muted" style="padding:8px">${gamesTab === 'recent' ? T('Aún no hay juegos recientes.') : T('Marca juegos con ☆ en Recientes.')}</p>`;
 }
 $('btn-games').onclick = async () => { games = await invoke('games_list'); renderGames(); open('dlg-games'); };
 document.querySelectorAll('.tab:not(.utab)').forEach((t) => t.onclick = () => {
@@ -539,7 +545,7 @@ function openUtil() {
   utilAcc = a;
   avatarFor = null;
   window.avatar3d?.dispose();
-  $('util-title').textContent = `Estadísticas y avatar: ${a.alias || a.username}`;
+  $('util-title').textContent = `${T('Estadísticas y avatar')}: ${a.alias || a.username}`;
   open('dlg-util');
   loadStats();
   showUtab('stats');
@@ -556,56 +562,56 @@ async function loadStats() {
   const max = Math.max(60, ...s.days.map(([, v]) => v));
   $('st-chart').innerHTML = s.days.map(([d, v]) => `<i style="height:${Math.max(v ? 3 : 0, (v / max) * 100)}%" title="${d}: ${hm(v)}"></i>`).join('');
   $('st-games').innerHTML = s.games.length ? s.games.map((g) => `<tr><td>${esc(g.name || g.placeId)}</td><td>${hm(g.seconds)}</td><td class="muted">${g.lastPlayed ? new Date(g.lastPlayed).toLocaleDateString() : ''}</td></tr>`).join('')
-    : '<tr><td colspan="3" class="muted">Todavía no hay datos. Se registran mientras la app está abierta y la cuenta está en juego.</td></tr>';
+    : `<tr><td colspan="3" class="muted">${T('Todavía no hay datos. Se registran mientras la app está abierta y la cuenta está en juego.')}</td></tr>`;
 }
 
 async function loadAvatar() {
   if (avatarFor === utilAcc.userId) return;
   avatarFor = utilAcc.userId;
   window.avatar3d?.dispose();
-  $('avatar-msg').textContent = 'Generando modelo 3D…';
+  $('avatar-msg').textContent = T('Generando modelo 3D…');
   try {
     const data = await invoke('account_util', { userId: utilAcc.userId, action: 'avatar3d', args: {} });
     if (avatarFor !== utilAcc.userId) return;
-    $('avatar-msg').textContent = 'Arrastra para girar · rueda para acercar';
+    $('avatar-msg').textContent = T('Arrastra para girar · rueda para acercar');
     window.avatar3d.render($('avatar-host'), data);
   } catch (e) { $('avatar-msg').textContent = String(e); avatarFor = null; }
 }
 
 async function util(action, args = {}, userId = accTarget?.userId) {
-  if (!userId) throw 'Selecciona una cuenta';
+  if (!userId) throw T('Selecciona una cuenta');
   return invoke('account_util', { userId, action, args });
 }
 async function utilDo(btn, action, args, ok) {
-  if (!accTarget) return toast('error', 'Selecciona una cuenta');
+  if (!accTarget) return toast('error', T('Selecciona una cuenta'));
   btn.disabled = true;
-  try { const r = await util(action, args); toast('success', ok ?? (typeof r === 'string' ? r : 'Hecho')); return r; }
+  try { const r = await util(action, args); toast('success', ok ?? (typeof r === 'string' ? T(r) : T('Hecho'))); return r; }
   catch (e) { toast('error', e); }
   finally { btn.disabled = false; }
 }
 
 $('pw-go').onclick = (e) => {
-  if (!$('pw-cur').value || !$('pw-new').value) return toast('error', 'Escribe la contraseña actual y la nueva');
+  if (!$('pw-cur').value || !$('pw-new').value) return toast('error', T('Escribe la contraseña actual y la nueva'));
   utilDo(e.target, 'password', { current: $('pw-cur').value, new: $('pw-new').value });
 };
 $('dn-go').onclick = (e) => utilDo(e.target, 'displayName', { name: $('dn-name').value.trim() });
-$('pin-go').onclick = (e) => utilDo(e.target, 'unlockPin', { pin: $('pin-code').value.trim() }, 'PIN desbloqueado').then(() => loadAccInfo(true));
-$('ql-go').onclick = (e) => utilDo(e.target, 'quickLogin', { code: $('ql-code').value.trim() }, 'Inicio de sesión aprobado');
+$('pin-go').onclick = (e) => utilDo(e.target, 'unlockPin', { pin: $('pin-code').value.trim() }, T('PIN desbloqueado')).then(() => loadAccInfo(true));
+$('ql-go').onclick = (e) => utilDo(e.target, 'quickLogin', { code: $('ql-code').value.trim() }, T('Inicio de sesión aprobado'));
 $('so-go').onclick = async (e) => {
-  if (await confirmBox('¿Cerrar la sesión de esta cuenta en todos los demás dispositivos?')) utilDo(e.target, 'signoutOthers');
+  if (await confirmBox(T('¿Cerrar la sesión de esta cuenta en todos los demás dispositivos?'))) utilDo(e.target, 'signoutOthers');
 };
 $('bl-load').onclick = async () => {
-  $('bl-msg').textContent = 'Cargando…';
+  $('bl-msg').textContent = T('Cargando…');
   try {
     const v = await util('blocked');
     const list = v.blockedUsers ?? (v.data?.blockedUserIds ?? []).map((id) => ({ userId: id }));
-    $('bl-msg').textContent = `${list.length} bloqueado(s)`;
-    $('bl-list').innerHTML = list.map((u) => `<div class="r-row bl"><span class="grow">${esc(u.displayName || u.name || '')} <span class="muted">${esc(u.name ? '@' + u.name : u.userId)}</span></span><button data-unblock="${u.userId}">Desbloquear</button></div>`).join('');
+    $('bl-msg').textContent = T('{n} bloqueado(s)', { n: list.length });
+    $('bl-list').innerHTML = list.map((u) => `<div class="r-row bl"><span class="grow">${esc(u.displayName || u.name || '')} <span class="muted">${esc(u.name ? '@' + u.name : u.userId)}</span></span><button data-unblock="${u.userId}">${T('Desbloquear')}</button></div>`).join('');
   } catch (e) { $('bl-msg').textContent = String(e); }
 };
 $('bl-list').addEventListener('click', async (e) => {
   const id = Number(e.target.dataset.unblock);
-  if (id && await utilDo(e.target, 'unblock', { userId: id }, 'Desbloqueado') !== undefined) e.target.closest('.bl').remove();
+  if (id && await utilDo(e.target, 'unblock', { userId: id }, T('Desbloqueado')) !== undefined) e.target.closest('.bl').remove();
 });
 
 // ───────────────────────── procesos
@@ -620,13 +626,13 @@ async function loadProcs() {
   const list = await invoke('processes_list');
   const now = Date.now() / 1000;
   const total = list.reduce((n, p) => n + p.memoryMb, 0);
-  $('procs-sum').textContent = `${list.length} abierto(s) · ${total} MB en total`;
+  $('procs-sum').textContent = T('{n} abierto(s) · {mb} MB en total', { n: list.length, mb: total });
   $('procs-rows').innerHTML = list.length ? list.map((p) => {
     const a = accounts.find((x) => x.userId && p.trackerId && accountsTracker[x.userId] === p.trackerId);
-    const name = a ? `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}` : `<span class="muted">${esc(p.title || 'Desconocida')}</span>`;
+    const name = a ? `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}` : `<span class="muted">${esc(p.title || T('Desconocida'))}</span>`;
     return `<tr><td><span class="cell">${name}</span></td><td>${p.pid}</td><td>${p.memoryMb} MB</td><td>${duration(now - p.startTime)}</td>
-      <td>${p.hwnd ? `<button data-pmin="${p.hwnd}">Minimizar</button> <button data-pclose="${p.hwnd}">Cerrar</button> ` : ''}<button data-pkill="${p.pid}">Matar</button></td></tr>`;
-  }).join('') : '<tr><td colspan="5" class="muted">No hay ningún Roblox abierto.</td></tr>';
+      <td>${p.hwnd ? `<button data-pmin="${p.hwnd}">${T('Minimizar')}</button> <button data-pclose="${p.hwnd}">${T('Cerrar')}</button> ` : ''}<button data-pkill="${p.pid}">${T('Matar')}</button></td></tr>`;
+  }).join('') : `<tr><td colspan="5" class="muted">${T('No hay ningún Roblox abierto.')}</td></tr>`;
 }
 let accountsTracker = {};
 $('btn-procs').onclick = async () => {
@@ -640,14 +646,14 @@ $('procs-rows').addEventListener('click', async (e) => {
   const d = e.target.dataset;
   if (d.pmin) await invoke('window_minimize', { hwnd: Number(d.pmin) });
   if (d.pclose) await invoke('window_close', { hwnd: Number(d.pclose) });
-  if (d.pkill && await confirmBox('¿Forzar el cierre de este Roblox?')) await invoke('process_kill', { pid: Number(d.pkill) });
+  if (d.pkill && await confirmBox(T('¿Forzar el cierre de este Roblox?'))) await invoke('process_kill', { pid: Number(d.pkill) });
   setTimeout(loadProcs, 600);
 });
 $('procs-min-all').onclick = async () => {
   for (const p of await invoke('processes_list')) if (p.hwnd) await invoke('window_minimize', { hwnd: p.hwnd });
 };
 $('procs-close-all').onclick = async () => {
-  if (!await confirmBox('¿Cerrar todas las ventanas de Roblox?')) return;
+  if (!await confirmBox(T('¿Cerrar todas las ventanas de Roblox?'))) return;
   for (const p of await invoke('processes_list')) if (p.hwnd) await invoke('window_close', { hwnd: p.hwnd });
   setTimeout(loadProcs, 1000);
 };
@@ -667,7 +673,7 @@ $('btn-settings').onclick = async () => {
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
   });
   $('set-err').textContent = '';
-  $('app-ver').textContent = `Versión ${await invoke('app_version')}`;
+  $('app-ver').textContent = `${T('Versión')} ${await invoke('app_version')}`;
   open('dlg-settings');
 };
 $('set-save').onclick = async () => {
@@ -677,7 +683,7 @@ $('set-save').onclick = async () => {
   });
   const ws = settings.webServer;
   if (ws.enabled && ws.password.length < 6 && (ws.allowGetCookie || ws.allowGetAccounts || ws.allowLaunchAccount)) {
-    toast('error', 'El servidor web necesita una contraseña de al menos 6 caracteres para esos permisos');
+    toast('error', T('El servidor web necesita una contraseña de al menos 6 caracteres para esos permisos'));
   }
   try {
     await invoke('settings_set', { s: settings });
@@ -695,17 +701,17 @@ async function checkUpdate(manual) {
     const u = await invoke('update_check');
     if (u.available) {
       updateUrl = u.url;
-      $('update-text').textContent = `Hay una nueva versión: ${u.latest} (tienes ${u.current})`;
+      $('update-text').textContent = T('Hay una nueva versión: {latest} (tienes {current})', u);
       open('update-bar');
       close('dlg-settings');
-    } else if (manual) toast('info', `Ya tienes la última versión (${u.current})`);
-  } catch (e) { if (manual) toast('error', `No se pudo buscar actualizaciones: ${e}`); }
+    } else if (manual) toast('info', T('Ya tienes la última versión ({current})', u));
+  } catch (e) { if (manual) toast('error', T('No se pudo buscar actualizaciones: {err}', { err: e })); }
 }
 $('btn-check-update').onclick = () => checkUpdate(true);
 $('update-later').onclick = () => close('update-bar');
 $('update-go').onclick = async () => {
   $('update-go').disabled = true;
-  $('update-text').textContent = 'Descargando actualización…';
+  $('update-text').textContent = T('Descargando actualización…');
   try { await invoke('update_install', { url: updateUrl }); }
   catch (e) { toast('error', e); $('update-go').disabled = false; }
 };
@@ -713,13 +719,13 @@ $('update-go').onclick = async () => {
 // ───────────────────────── eventos del backend
 
 listen('accounts', (e) => { accounts = e.payload; render(); });
-listen('toast', (e) => toast(e.payload.kind, e.payload.message));
+listen('toast', (e) => toast(e.payload.kind, T(e.payload.message)));
 listen('launch-progress', (e) => {
   const p = e.payload;
   $('progress').classList.toggle('hidden', p.done);
-  $('progress-text').textContent = `Lanzando ${p.current}/${p.total}: ${p.username}`;
+  $('progress-text').textContent = T('Lanzando {current}/{total}: {username}', p);
 });
-listen('vip-privacy', (e) => toast('info', `${e.payload.username}: la privacidad de servidores privados no está en "Todos"`));
+listen('vip-privacy', (e) => toast('info', T('{username}: la privacidad de servidores privados no está en "Todos"', e.payload)));
 
 async function loadMain() {
   settings = await invoke('settings_get');
@@ -761,7 +767,7 @@ function showAccount(a) {
   $('acc-av').src = a.avatarUrl || '';
   $('acc-name').textContent = a.alias || a.displayName || a.username;
   $('acc-user').textContent = `@${a.username} · ${a.userId}`;
-  $('acc-age').textContent = a.ageDays > 0 ? `${a.ageDays} d` : 'hoy';
+  $('acc-age').textContent = a.ageDays > 0 ? `${a.ageDays} d` : T('hoy');
   $('fr-target').innerHTML = accounts.filter((x) => x.userId !== a.userId)
     .map((x) => `<option value="${x.userId}">${esc(x.alias ? `${x.alias} (${x.username})` : x.username)}</option>`).join('');
   if (!changed) return;
@@ -772,14 +778,14 @@ function showAccount(a) {
 }
 
 function paintInfo(i) {
-  let email = 'sin correo';
+  let email = T('sin correo');
   try {
     const e = typeof i.email === 'string' ? JSON.parse(i.email) : i.email;
-    if (e?.emailAddress) email = e.verified ? 'verificado' : 'sin verificar';
+    if (e?.emailAddress) email = T(e.verified ? 'verificado' : 'sin verificar');
   } catch { email = '?'; }
   $('acc-robux').textContent = i.robux ?? '?';
   $('acc-email').textContent = email;
-  $('acc-pin').textContent = !i.pinEnabled ? 'no' : i.pinUnlockedUntil > 0 ? 'abierto' : 'activo';
+  $('acc-pin').textContent = T(!i.pinEnabled ? 'no' : i.pinUnlockedUntil > 0 ? 'abierto' : 'activo');
 }
 
 async function loadAccInfo(force = false) {
@@ -804,10 +810,10 @@ $('of-load').onclick = async (e) => {
   const a = accTarget;
   if (!a) return;
   e.target.disabled = true;
-  $('of-msg').textContent = 'Cargando…';
+  $('of-msg').textContent = T('Cargando…');
   try {
     const list = await util('outfits', {}, a.userId);
-    $('of-msg').textContent = list.length ? 'Clic en un traje para ponérselo a las cuentas seleccionadas.' : 'Esta cuenta no tiene trajes guardados.';
+    $('of-msg').textContent = T(list.length ? 'Clic en un traje para ponérselo a las cuentas seleccionadas.' : 'Esta cuenta no tiene trajes guardados.');
     $('of-list').innerHTML = list.map((o) => `<button class="outfit" data-outfit="${o.id}" title="${esc(o.name)}">${o.image ? `<img src="${esc(o.image)}" alt="">` : '<i></i>'}<span>${esc(o.name)}</span></button>`).join('');
   } catch (err) { $('of-msg').textContent = String(err); }
   finally { e.target.disabled = false; }
@@ -816,26 +822,38 @@ $('of-list').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-outfit]');
   if (!b) return;
   const targets = selectedAccounts();
-  if (targets.length > 1 && !await confirmBox(`¿Poner este traje a ${targets.length} cuentas?`)) return;
+  if (targets.length > 1 && !await confirmBox(T('¿Poner este traje a {n} cuentas?', { n: targets.length }))) return;
   b.disabled = true;
   let ok = 0;
   for (const t of targets) {
-    try { const m = await util('applyOutfit', { outfitId: Number(b.dataset.outfit) }, t.userId); ok++; if (targets.length === 1) toast('success', m); }
+    try { const m = await util('applyOutfit', { outfitId: Number(b.dataset.outfit) }, t.userId); ok++; if (targets.length === 1) toast('success', T(m)); }
     catch (err) { toast('error', `${t.username}: ${err}`); }
   }
-  if (targets.length > 1) toast('success', `Traje aplicado en ${ok} de ${targets.length} cuentas`);
+  if (targets.length > 1) toast('success', T('Traje aplicado en {ok} de {n} cuentas', { ok, n: targets.length }));
   b.disabled = false;
 });
 
 $('em-go').onclick = (e) => {
   const email = $('em-new').value.trim();
-  if (!email.includes('@')) return toast('error', 'Escribe un correo válido');
+  if (!email.includes('@')) return toast('error', T('Escribe un correo válido'));
   utilDo(e.target, 'email', { email, password: $('em-pass').value }).then(() => loadAccInfo(true));
 };
 $('fp-go').onclick = (e) => utilDo(e.target, 'followPrivacy', { level: Number($('fp-level').value) });
 $('fr-go').onclick = (e) => {
   const id = Number($('fr-target').value);
-  if (!id) return toast('error', 'No hay otra cuenta a la que enviarla');
+  if (!id) return toast('error', T('No hay otra cuenta a la que enviarla'));
   utilDo(e.target, 'friend', { targetId: id });
 };
 showAccount(null);
+
+// ───────────────────────── idioma
+
+$('lang-sel').value = LANG;
+$('lang-sel').onchange = (e) => {
+  setLang(e.target.value);
+  render();
+  showMulti();
+  const a = accTarget;
+  accTarget = null;
+  showAccount(a);
+};

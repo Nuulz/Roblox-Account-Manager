@@ -1,4 +1,5 @@
 mod account;
+mod browser;
 mod clientsettings;
 mod crypto;
 mod games;
@@ -387,6 +388,18 @@ fn window_move(hwnd: isize, x: i32, y: i32, w: i32, h: i32) {
     process::move_window(hwnd, x, y, w, h);
 }
 
+// ─────────────────────────────────── navegador
+
+#[tauri::command]
+async fn browser_open(user_id: i64, path: Option<String>) -> CmdResult<()> {
+    browser::open_account(user_id, path).await
+}
+
+#[tauri::command]
+async fn browser_login() -> CmdResult<()> {
+    browser::login().await
+}
+
 // ─────────────────────────────────── utilidades
 
 #[tauri::command]
@@ -501,6 +514,9 @@ pub fn run() {
             window_close,
             window_minimize,
             window_move,
+            // navegador
+            browser_open,
+            browser_login,
             // utilidades
             roblox_version,
             app_uptime_secs,

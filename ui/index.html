@@ -265,6 +265,7 @@
           <span class="muted">Ejemplo: http://localhost:7963/GetAccounts?Password=…</span>
         </fieldset>
         <fieldset><legend>Aplicación</legend>
+          <label class="row">Idioma <select id="lang-sel"><option value="es">Español</option><option value="en">English</option></select></label>
           <label class="row"><input type="checkbox" data-k="checkForUpdates"> Buscar actualizaciones al iniciar</label>
           <div class="r-row"><button id="btn-check-update">Buscar actualización</button><span id="app-ver" class="muted"></span></div>
         </fieldset>
@@ -276,6 +277,7 @@
 
   <ul id="ctx" class="ctx hidden">
     <li data-act="join">Unirse al servidor</li>
+    <li data-act="browser">Abrir en el navegador</li>
     <li data-act="copy-user">Copiar usuario</li>
     <li data-act="copy-password">Copiar contraseña</li>
     <li data-act="copy-combo">Copiar usuario:contraseña</li>
@@ -289,6 +291,7 @@
   </ul>
 
   <ul id="add-menu" class="ctx hidden">
+    <li data-add="login">Iniciar sesión en el navegador…</li>
     <li data-add="cookie">Por cookie…</li>
     <li class="sep"></li>
     <li data-add="import">Importar archivo…</li>
@@ -305,6 +308,7 @@
   </div>
 
   <div id="toasts"></div>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
   <script type="module" src="avatar3d.js"></script>
 </body>
