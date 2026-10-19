@@ -241,3 +241,18 @@ table.hl td { height: 26px; }
 tr.problem td { background: rgba(217, 54, 54, .08); }
 .hl-note { font-size: 11px; margin: 6px 0 0; }
 td.num { text-align: right; padding-right: 10px; font-variant-numeric: tabular-nums; }
+
+.r-grid .span2 { grid-column: span 2; }
+.find-opts { margin-top: 6px; }
+.find-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; padding: 8px; align-content: start; }
+.fg { display: flex; flex-direction: column; border: 1px solid var(--ctl-line); background: var(--ctl); min-width: 0; }
+.fg img, .fg .noimg { width: 100%; aspect-ratio: 1; display: block; background: var(--list); object-fit: cover; }
+.fg .body { padding: 5px 6px 6px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fg .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fg .meta { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fg .meta b { color: var(--ok); font-weight: 600; }
+.fg .tag { font-size: 10px; color: var(--studio); }
+.fg .btns { display: flex; gap: 4px; margin-top: 4px; }
+.fg .btns button { flex: 1; height: 22px; padding: 0 4px; }
+.fg .btns button.use { border-color: var(--sel); color: var(--timer); }
+.fg .btns button.fav { flex: 0 0 26px; }

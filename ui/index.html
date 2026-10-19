@@ -86,6 +86,7 @@
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
             <button id="btn-afk">Anti-AFK</button>
+            <button id="btn-find" class="span2">🔍 Buscar juego</button>
           </div>
         </div>
 
@@ -151,6 +152,7 @@
           <div class="tools">
             <button class="tool" data-proxy="btn-servers"><b>🌐</b><span>Servidores</span><small>Explorar y filtrar</small></button>
             <button class="tool" data-proxy="btn-games"><b>🎮</b><span>Juegos</span><small>Recientes y favoritos</small></button>
+            <button class="tool" data-proxy="btn-find"><b>🔍</b><span>Buscador de juegos</span><small>Buscar por nombre</small></button>
             <button class="tool" data-proxy="btn-procs"><b>▤</b><span>Procesos</span><small>Ventanas de Roblox</small></button>
             <button class="tool" data-proxy="btn-util"><b>📊</b><span>Estadísticas</span><small>Tiempo de juego</small></button>
             <button class="tool" data-proxy="btn-add"><b>⇅</b><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
@@ -218,6 +220,22 @@
         <table><thead><tr><th>Juego más jugado</th><th style="width:90px">Tiempo</th><th style="width:110px">Última vez</th></tr></thead><tbody id="st-games"></tbody></table>
       </div>
       <div id="utab-avatar" class="scroll upane hidden"><div id="avatar-host" class="avatar-host"></div><div id="avatar-msg" class="avatar-msg muted"></div></div>
+    </div>
+  </div>
+
+  <div id="dlg-find" class="overlay hidden">
+    <div class="card big wide">
+      <h2>Buscador de juegos <button class="close" data-close="dlg-find">✕</button></h2>
+      <div class="r-row">
+        <input id="find-q" class="grow" placeholder="Nombre del juego, p. ej. Blox Fruits">
+        <button id="find-go" class="primary">Buscar</button>
+      </div>
+      <div class="r-row find-opts">
+        <label class="row"><input type="checkbox" id="find-nospons" checked> Ocultar patrocinados</label>
+        <span id="find-msg" class="grow muted"></span>
+      </div>
+      <div id="find-list" class="scroll find-list"></div>
+      <div class="actions"><button id="find-more" class="hidden">Más resultados</button></div>
     </div>
   </div>
 

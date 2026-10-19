@@ -1115,6 +1115,91 @@ $('hl-rows').addEventListener('click', (e) => {
 });
 listen('accounts', () => { if (!$('dlg-health').classList.contains('hidden')) renderHealth(); });
 
+// ───────────────────────── buscador de juegos
+
+let findNext = null;
+let findTerm = '';
+let findSeq = 0;
+const compact = (n) => new Intl.NumberFormat(LANG === 'en' ? 'en-US' : 'es-ES', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+
+async function findGames(more) {
+  const term = more ? findTerm : $('find-q').value.trim();
+  if (!term) return $('find-q').focus();
+  const seq = ++findSeq;
+  if (!more) { findTerm = term; findNext = null; $('find-list').innerHTML = ''; }
+  $('find-go').disabled = $('find-more').disabled = true;
+  $('find-msg').textContent = T('Buscando…');
+  try {
+    const r = await invoke('games_search', { term, pageToken: more ? findNext : null });
+    if (seq !== findSeq) return;
+    findNext = r.next;
+    const favIds = new Set((games.favorites || []).map((g) => g.placeId));
+    const hideSpons = $('find-nospons').checked;
+    $('find-list').insertAdjacentHTML('beforeend', r.games.filter((g) => !(hideSpons && g.sponsored)).map((g) => `
+      <div class="fg" data-place="${g.placeId}" data-name="${esc(g.name)}" data-icon="${esc(g.icon)}">
+        ${g.icon ? `<img src="${esc(g.icon)}" alt="" loading="lazy">` : '<div class="noimg"></div>'}
+        <div class="body">
+          <div class="nm" title="${esc(g.name)}">${esc(g.name)}</div>
+          <div class="meta"><b>● ${compact(g.players)}</b> ${esc(T('jugando'))}${g.likes != null ? ` · 👍 ${g.likes}%` : ''}</div>
+          ${g.creator ? `<div class="meta" title="${esc(g.creator)}">${esc(T('por {name}', { name: g.creator }))}${g.verified ? ' ✔' : ''}</div>` : ''}
+          ${g.sponsored ? `<div class="tag">${esc(T('Patrocinado'))}</div>` : ''}
+          <div class="btns">
+            <button class="use" data-fuse="${g.placeId}">${esc(T('Usar'))}</button>
+            <button data-fsrv="${g.placeId}">${esc(T('Servidores'))}</button>
+            <button class="fav" data-ffav="${g.placeId}" title="${esc(T('Favorito'))}">${favIds.has(g.placeId) ? '★' : '☆'}</button>
+          </div>
+        </div>
+      </div>`).join(''));
+    const n = $('find-list').children.length;
+    $('find-msg').textContent = n ? T('{n} juegos', { n }) : T('No se encontraron juegos.');
+    $('find-more').classList.toggle('hidden', !findNext);
+  } catch (e) {
+    if (seq === findSeq) $('find-msg').textContent = T(String(e));
+  } finally {
+    if (seq === findSeq) $('find-go').disabled = $('find-more').disabled = false;
+  }
+}
+
+$('btn-find').onclick = async () => {
+  games = await invoke('games_list').catch(() => games);
+  open('dlg-find');
+  $('find-q').focus();
+  $('find-q').select();
+};
+$('find-go').onclick = () => findGames(false);
+$('find-more').onclick = () => findGames(true);
+$('find-q').onkeydown = (e) => e.key === 'Enter' && findGames(false);
+$('find-nospons').onchange = () => findTerm && findGames(false);
+$('find-list').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  const card = e.target.closest('.fg');
+  if (!card) return;
+  const placeId = Number(card.dataset.place);
+  if (d.fuse) {
+    $('place-id').value = placeId;
+    $('job-id').value = '';
+    lookupGame();
+    close('dlg-find');
+    document.querySelector('[data-rtab=launch]').click();
+    toast('success', T('Juego listo en el Lanzador: {name}', { name: card.dataset.name }));
+  } else if (d.fsrv) {
+    close('dlg-find');
+    $('place-id').value = placeId;
+    lookupGame();
+    $('btn-servers').click();
+    $('srv-place').value = placeId;
+    loadServers(false);
+  } else if (d.ffav) {
+    const isFav = (games.favorites || []).some((g) => g.placeId === placeId);
+    try {
+      if (isFav) await invoke('game_remove_favorite', { placeId });
+      else await invoke('game_add_favorite', { entry: { placeId, name: card.dataset.name, icon: card.dataset.icon, privateServer: '' } });
+      e.target.textContent = isFav ? '☆' : '★';
+      toast('success', T(isFav ? 'Quitado de favoritos' : 'Agregado a favoritos'));
+    } catch (err) { toast('error', T(String(err))); }
+  }
+});
+
 // ───────────────────────── idioma
 
 $('lang-sel').value = LANG;

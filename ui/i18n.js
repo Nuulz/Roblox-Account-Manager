@@ -336,6 +336,25 @@ const I18N_EN = {
   'Cancelando…': 'Cancelling…',
   'Ya hay una revisión en curso': 'A check is already running',
 
+  // buscador de juegos
+  '🔍 Buscar juego': '🔍 Find game',
+  'Buscador de juegos': 'Game finder',
+  'Buscar por nombre': 'Search by name',
+  'Nombre del juego, p. ej. Blox Fruits': 'Game name, e.g. Blox Fruits',
+  'Buscar': 'Search',
+  'Ocultar patrocinados': 'Hide sponsored',
+  'Más resultados': 'More results',
+  'Buscando…': 'Searching…',
+  'jugando': 'playing',
+  'por {name}': 'by {name}',
+  'Patrocinado': 'Sponsored',
+  '{n} juegos': '{n} games',
+  'No se encontraron juegos.': 'No games found.',
+  'Juego listo en el Lanzador: {name}': 'Game ready in the Launcher: {name}',
+  'Quitado de favoritos': 'Removed from favorites',
+  'Agregado a favoritos': 'Added to favorites',
+  'Escribe qué juego buscar': 'Type which game to search for',
+
   // mensajes fijos del backend
   'Contraseña cambiada': 'Password changed',
   'Correo cambiado; Roblox enviará un mensaje para verificarlo': 'Email changed; Roblox will send a message to verify it',

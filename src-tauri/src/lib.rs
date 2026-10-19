@@ -294,6 +294,41 @@ fn game_clear_recent() {
     st().emit("games", g.clone());
 }
 
+/// Busca juegos por nombre. Devuelve tarjetas listas para la UI y el token de la página siguiente.
+#[tauri::command]
+async fn games_search(term: String, page_token: Option<String>) -> CmdResult<serde_json::Value> {
+    use serde_json::{json, Value};
+    let term = term.trim();
+    if term.is_empty() {
+        return Err("Escribe qué juego buscar".into());
+    }
+    let api = roblox::api();
+    let (raw, next) = api.search_games(term, page_token.as_deref()).await.map_err(ops::err)?;
+    let ids: Vec<i64> = raw.iter().filter_map(|g| g["universeId"].as_i64()).collect();
+    let icons = api.universe_icons(&ids).await;
+    let games: Vec<Value> = raw
+        .iter()
+        .filter_map(|g| {
+            let universe = g["universeId"].as_i64()?;
+            let place = g["rootPlaceId"].as_i64()?;
+            let up = g["totalUpVotes"].as_i64().unwrap_or(0);
+            let down = g["totalDownVotes"].as_i64().unwrap_or(0);
+            Some(json!({
+                "placeId": place,
+                "universeId": universe,
+                "name": g["name"].as_str().unwrap_or_default(),
+                "players": g["playerCount"].as_i64().unwrap_or(0),
+                "likes": if up + down > 0 { Some(up * 100 / (up + down)) } else { None },
+                "creator": g["creatorName"].as_str().unwrap_or_default(),
+                "verified": g["creatorHasVerifiedBadge"].as_bool().unwrap_or(false),
+                "sponsored": g["isSponsored"].as_bool().unwrap_or(false),
+                "icon": icons.get(&universe).cloned().unwrap_or_default(),
+            }))
+        })
+        .collect();
+    Ok(json!({ "games": games, "next": next }))
+}
+
 #[tauri::command]
 async fn game_info(place_id: i64) -> CmdResult<roblox::PlaceInfo> {
     roblox::api().place_info(place_id).await.map_err(ops::err)
@@ -541,6 +576,7 @@ pub fn run() {
             game_remove_favorite,
             game_clear_recent,
             game_info,
+            games_search,
             // configuración
             settings_get,
             settings_set,
