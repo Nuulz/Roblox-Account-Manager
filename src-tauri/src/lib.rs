@@ -3,6 +3,7 @@ mod browser;
 mod clientsettings;
 mod crypto;
 mod games;
+mod health;
 mod ops;
 mod process;
 mod profiles;
@@ -389,6 +390,23 @@ fn window_move(hwnd: isize, x: i32, y: i32, w: i32, h: i32) {
     process::move_window(hwnd, x, y, w, h);
 }
 
+// ─────────────────────────────────── revisión de cuentas
+
+#[tauri::command]
+async fn health_check(ids: Vec<i64>) -> CmdResult<()> {
+    health::check(ids).await
+}
+
+#[tauri::command]
+fn health_last() -> Vec<health::HealthRow> {
+    health::last()
+}
+
+#[tauri::command]
+fn health_cancel() {
+    health::cancel();
+}
+
 // ─────────────────────────────────── perfiles de lanzamiento
 
 #[tauri::command]
@@ -537,6 +555,10 @@ pub fn run() {
             window_close,
             window_minimize,
             window_move,
+            // revisión
+            health_check,
+            health_last,
+            health_cancel,
             // perfiles
             profiles_list,
             profile_save,

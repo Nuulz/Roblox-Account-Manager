@@ -227,3 +227,17 @@ details textarea { width: calc(100% - 16px); }
 .pe-acc button { height: 20px; width: 22px; padding: 0; }
 .pe-acc.off .nm, .pe-acc.off .av { opacity: .45; }
 .prof .info > span { white-space: normal; }
+
+.card.big.wide { width: min(820px, calc(100vw - 24px)); }
+.hl-sum { margin: 0 0 8px; }
+.hl-sum b.ok { color: var(--ok); } .hl-sum b.bad { color: var(--bad); }
+.hl-sum small { display: block; font-size: 11px; min-height: 1em; }
+table.hl td { height: 26px; }
+.st { display: inline-flex; align-items: center; gap: 5px; }
+.st i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.st.ok i { background: var(--ok); } .st.expired i, .st.mismatch i { background: var(--bad); } .st.checking i { background: var(--timer); }
+.st.expired, .st.mismatch { color: var(--bad); }
+.up { color: var(--ok); } .down { color: var(--bad); }
+tr.problem td { background: rgba(217, 54, 54, .08); }
+.hl-note { font-size: 11px; margin: 6px 0 0; }
+td.num { text-align: right; padding-right: 10px; font-variant-numeric: tabular-nums; }

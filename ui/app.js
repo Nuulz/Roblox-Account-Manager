@@ -849,8 +849,8 @@ showAccount(null);
 
 // ───────────────────────── volver a iniciar sesión con datos guardados
 
-async function relogin() {
-  const sel = selectedAccounts();
+async function relogin(target) {
+  const sel = target ? [target] : selectedAccounts();
   if (sel.length !== 1) return toast('error', T('Solo se puede rellenar una cuenta a la vez'));
   const a = sel[0];
   if (!a.hasPassword) return toast('error', T('Esta cuenta no tiene contraseña guardada'));
@@ -1007,6 +1007,113 @@ $('prof-list').addEventListener('click', async (e) => {
 $('prof-quick-go').onclick = () => launchProfile(Number($('prof-quick').value));
 listen('accounts', () => { if (!$('dlg-profiles').classList.contains('hidden')) renderProfiles(); });
 loadProfiles();
+
+// ───────────────────────── salud de cuentas y Robux
+
+const health = new Map();
+let healthChecking = null;
+
+async function openHealth() {
+  for (const r of await invoke('health_last').catch(() => [])) health.set(r.userId, r);
+  renderHealth();
+  open('dlg-health');
+}
+
+const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString(LANG === 'en' ? 'en-US' : 'es-ES'));
+const ago = (iso) => {
+  if (!iso) return '—';
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+  if (m < 1) return T('ahora');
+  if (m < 60) return T('hace {n} min', { n: m });
+  if (m < 1440) return T('hace {n} h', { n: Math.round(m / 60) });
+  return T('hace {n} d', { n: Math.round(m / 1440) });
+};
+
+function healthState(r, a) {
+  if (healthChecking?.has(a.userId) && !r?.fresh) return ['checking', T('Revisando…')];
+  if (!r) return a.needsLogin ? ['expired', T('Requiere iniciar sesión')] : ['', T('Sin revisar')];
+  return {
+    ok: ['ok', T('Sesión válida')],
+    expired: ['expired', T('Cookie vencida')],
+    mismatch: ['mismatch', T('Cookie de otra cuenta')],
+    unknown: ['', T('No se pudo comprobar')],
+  }[r.state];
+}
+
+function renderHealth() {
+  const rows = accounts.map((a) => ({ a, r: health.get(a.userId) }));
+  const rank = (x) => (x.r?.state === 'expired' || x.r?.state === 'mismatch' || (!x.r && x.a.needsLogin) ? 0 : x.r?.state === 'ok' ? 2 : 1);
+  rows.sort((x, y) => rank(x) - rank(y) || (y.r?.robux ?? -1) - (x.r?.robux ?? -1));
+  const ok = rows.filter((x) => x.r?.state === 'ok');
+  const bad = rows.filter((x) => rank(x) === 0);
+  const total = ok.reduce((n, x) => n + (x.r.robux ?? 0), 0);
+  const delta = ok.reduce((n, x) => n + (x.r.prevRobux != null && x.r.robux != null ? x.r.robux - x.r.prevRobux : 0), 0);
+  $('hl-robux').textContent = ok.length ? fmt(total) : '—';
+  $('hl-delta').innerHTML = delta ? `<span class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : ''}${fmt(delta)}</span> ${esc(T('desde la revisión anterior'))}` : '';
+  $('hl-ok').textContent = ok.length;
+  $('hl-bad').textContent = bad.length;
+  $('hl-unk').textContent = rows.length - ok.length - bad.length;
+  $('hl-rows').innerHTML = rows.map(({ a, r }) => {
+    const [cls, label] = healthState(r, a);
+    const d = r?.robux != null && r?.prevRobux != null ? r.robux - r.prevRobux : 0;
+    const act = cls === 'expired' || cls === 'mismatch'
+      ? `<button data-hlogin="${a.userId}">${esc(T('Iniciar sesión'))}</button>`
+      : `<button data-hcheck="${a.userId}" ${healthChecking ? 'disabled' : ''}>${esc(T('Revisar'))}</button>`;
+    return `<tr class="${cls === 'expired' || cls === 'mismatch' ? 'problem' : ''}">
+      <td><span class="cell">${avImg(a)}<span class="nm">${esc(accName(a))}</span></span></td>
+      <td title="${esc(r?.state === 'unknown' ? r.detail : r?.state === 'mismatch' ? T('La cookie guardada pertenece a {name}', { name: r.detail }) : '')}"><span class="st ${cls}"><i></i>${esc(label)}</span></td>
+      <td class="num">${fmt(r?.robux)}</td>
+      <td class="num">${d ? `<span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${fmt(d)}</span>` : ''}</td>
+      <td>${a.ageDays > 0 ? `${a.ageDays} d` : T('hoy')}</td>
+      <td class="muted">${esc(ago(r?.checkedAt))}</td>
+      <td>${act}</td></tr>`;
+  }).join('') || `<tr><td colspan="7" class="muted">${esc(T('No hay cuentas.'))}</td></tr>`;
+}
+
+async function runHealth(ids) {
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+  healthChecking = new Set(ids);
+  ids.forEach((id) => { const r = health.get(id); if (r) r.fresh = false; });
+  $('hl-cancel').classList.remove('hidden');
+  ['hl-all', 'hl-sel'].forEach((id) => { $(id).disabled = true; });
+  $('hl-msg').textContent = T('Revisando 0 de {n}…', { n: ids.length });
+  renderHealth();
+  try { await invoke('health_check', { ids }); }
+  catch (e) { toast('error', T(String(e))); endHealth(); }
+}
+function endHealth() {
+  healthChecking = null;
+  $('hl-cancel').classList.add('hidden');
+  ['hl-all', 'hl-sel'].forEach((id) => { $(id).disabled = false; });
+  renderHealth();
+}
+listen('health-progress', (e) => {
+  const p = e.payload;
+  if (p.row) health.set(p.row.userId, { ...p.row, fresh: true });
+  if (p.done) {
+    endHealth();
+    const bad = [...health.values()].filter((r) => r.state === 'expired' || r.state === 'mismatch').length;
+    $('hl-msg').textContent = bad ? T('Listo: {n} cuenta(s) necesitan iniciar sesión.', { n: bad }) : T('Listo: todas las sesiones revisadas están bien.');
+  } else {
+    $('hl-msg').textContent = T('Revisando {current} de {total}…', p);
+    renderHealth();
+  }
+});
+
+$('btn-health').onclick = openHealth;
+$('hl-all').onclick = () => runHealth(accounts.map((a) => a.userId));
+$('hl-sel').onclick = () => runHealth(orderedIds().filter((id) => selected.has(id)));
+$('hl-cancel').onclick = () => { invoke('health_cancel'); $('hl-msg').textContent = T('Cancelando…'); };
+$('hl-rows').addEventListener('click', (e) => {
+  const d = e.target.dataset;
+  if (d.hcheck) runHealth([Number(d.hcheck)]);
+  if (d.hlogin) {
+    const a = accounts.find((x) => x.userId === Number(d.hlogin));
+    if (a?.hasPassword) relogin(a);
+    else invoke('browser_login', { userId: null }).then(() => toast('info', T('Inicia sesión en la ventana nueva; la cuenta se agregará sola.'))).catch((err) => toast('error', T(String(err))));
+  }
+});
+listen('accounts', () => { if (!$('dlg-health').classList.contains('hidden')) renderHealth(); });
 
 // ───────────────────────── idioma
 

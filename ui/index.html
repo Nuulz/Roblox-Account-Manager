@@ -155,6 +155,7 @@
             <button class="tool" data-proxy="btn-util"><b>📊</b><span>Estadísticas</span><small>Tiempo de juego</small></button>
             <button class="tool" data-proxy="btn-add"><b>⇅</b><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
             <button class="tool" data-proxy="btn-settings"><b>⚙</b><span>Ajustes</span><small>Multi Roblox, API</small></button>
+            <button class="tool" id="btn-health"><b>🩺</b><span>Salud y Robux</span><small>Cookies vencidas y Robux totales</small></button>
             <button class="tool soon" disabled><b>👥</b><span>Grupos Roblox</span><small>Próximamente</small></button>
             <button class="tool" id="btn-profiles"><b>⚡</b><span>Perfiles</span><small>Lanzar grupos de cuentas</small></button>
           </div>
@@ -217,6 +218,26 @@
         <table><thead><tr><th>Juego más jugado</th><th style="width:90px">Tiempo</th><th style="width:110px">Última vez</th></tr></thead><tbody id="st-games"></tbody></table>
       </div>
       <div id="utab-avatar" class="scroll upane hidden"><div id="avatar-host" class="avatar-host"></div><div id="avatar-msg" class="avatar-msg muted"></div></div>
+    </div>
+  </div>
+
+  <div id="dlg-health" class="overlay hidden">
+    <div class="card big wide">
+      <h2>Salud de cuentas y Robux <button class="close" data-close="dlg-health">✕</button></h2>
+      <div class="stat-sum hl-sum">
+        <div><b id="hl-robux">—</b><span>Robux en total</span><small id="hl-delta"></small></div>
+        <div><b id="hl-ok" class="ok">—</b><span>Sesión válida</span></div>
+        <div><b id="hl-bad" class="bad">—</b><span>Hay que iniciar sesión</span></div>
+        <div><b id="hl-unk">—</b><span>Sin comprobar</span></div>
+      </div>
+      <div class="r-row">
+        <button id="hl-all" class="primary">Revisar todas</button><button id="hl-sel">Revisar selección</button>
+        <span id="hl-msg" class="grow muted"></span><button id="hl-cancel" class="hidden">Cancelar</button>
+      </div>
+      <div class="scroll">
+        <table class="hl"><thead><tr><th>Cuenta</th><th style="width:150px">Estado</th><th style="width:80px">Robux</th><th style="width:70px">Cambio</th><th style="width:72px">Sin usar</th><th style="width:96px">Revisada</th><th style="width:150px"></th></tr></thead><tbody id="hl-rows"></tbody></table>
+      </div>
+      <p class="muted hl-note">Se revisa una cuenta cada segundo aproximadamente para no saturar a Roblox. El cambio de Robux compara con la revisión anterior.</p>
     </div>
   </div>
 
