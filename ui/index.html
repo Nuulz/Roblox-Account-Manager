@@ -89,11 +89,60 @@
         </div>
 
         <div id="rpane-account" class="rpane hidden">
-          <div class="r-row"><input id="alias" class="grow" placeholder="Alias"><button id="btn-alias">Poner alias</button></div>
-          <textarea id="desc" placeholder="Descripción"></textarea>
-          <div class="r-grid">
-            <button id="btn-desc">Guardar descripción</button>
-            <button id="btn-util">Utilidades de cuenta</button>
+          <div id="acc-none" class="empty">Selecciona una cuenta para ver sus datos.</div>
+          <div id="acc-body" class="acc-body">
+            <div class="acc-card">
+              <img id="acc-av" class="acc-av" alt="">
+              <div class="grow">
+                <div id="acc-name" class="acc-name"></div>
+                <div id="acc-user" class="muted"></div>
+              </div>
+              <button id="acc-refresh" class="icon small" title="Actualizar datos">↻</button>
+            </div>
+            <div class="acc-chips">
+              <div><b id="acc-robux">—</b><span>Robux</span></div>
+              <div><b id="acc-email">—</b><span>Correo</span></div>
+              <div><b id="acc-pin">—</b><span>PIN</span></div>
+              <div><b id="acc-age">—</b><span>Sin usar</span></div>
+            </div>
+
+            <details open><summary>Perfil</summary>
+              <div class="r-row"><input id="alias" class="grow" placeholder="Alias"><button id="btn-alias">Poner alias</button></div>
+              <textarea id="desc" rows="3" placeholder="Descripción"></textarea>
+              <div class="r-row"><span class="grow"></span><button id="btn-desc">Guardar descripción</button></div>
+              <div class="r-row"><input id="dn-name" class="grow" placeholder="Nombre visible"><button id="dn-go">Cambiar</button></div>
+            </details>
+
+            <details><summary>Avatar y trajes</summary>
+              <div class="r-row"><button id="of-load" class="grow">Cargar trajes</button><button id="btn-util" title="Estadísticas y avatar 3D">Ver en 3D</button></div>
+              <div id="of-list" class="outfits"></div>
+              <span id="of-msg" class="muted"></span>
+            </details>
+
+            <details><summary>Seguridad</summary>
+              <label class="sub">Contraseña</label>
+              <div class="r-row"><input id="pw-cur" type="password" placeholder="Actual" class="grow"><input id="pw-new" type="password" placeholder="Nueva" class="grow"><button id="pw-go">Cambiar</button></div>
+              <label class="sub">Correo</label>
+              <div class="r-row"><input id="em-new" placeholder="Correo nuevo" class="grow"><input id="em-pass" type="password" placeholder="Contraseña" class="grow"><button id="em-go">Cambiar</button></div>
+              <label class="sub">PIN de la cuenta</label>
+              <div class="r-row"><input id="pin-code" inputmode="numeric" maxlength="4" placeholder="PIN" class="grow"><button id="pin-go">Desbloquear</button></div>
+              <label class="sub">Inicio de sesión rápido</label>
+              <div class="r-row"><input id="ql-code" placeholder="Código del otro dispositivo" class="grow"><button id="ql-go">Aprobar</button></div>
+              <div class="r-row"><span class="grow muted">Cierra la sesión en los demás dispositivos y renueva la cookie.</span><button id="so-go">Cerrar otras</button></div>
+            </details>
+
+            <details><summary>Privacidad y amigos</summary>
+              <label class="sub">Quién puede seguirte a juegos</label>
+              <div class="r-row">
+                <select id="fp-level" class="grow"><option value="0">Todos</option><option value="1">Seguidores</option><option value="2">A quienes sigo</option><option value="3">Amigos</option><option value="4">Nadie</option></select>
+                <button id="fp-go">Aplicar</button>
+              </div>
+              <label class="sub">Enviar solicitud de amistad a otra de tus cuentas</label>
+              <div class="r-row"><select id="fr-target" class="grow"></select><button id="fr-go">Enviar</button></div>
+              <label class="sub">Usuarios bloqueados</label>
+              <div class="r-row"><button id="bl-load">Cargar lista</button><span id="bl-msg" class="muted"></span></div>
+              <div id="bl-list"></div>
+            </details>
           </div>
         </div>
 
@@ -158,8 +207,8 @@
 
   <div id="dlg-util" class="overlay hidden">
     <div class="card big">
-      <h2><span id="util-title">Utilidades de cuenta</span> <button class="close" data-close="dlg-util">✕</button></h2>
-      <div class="r-row"><button data-utab="stats" class="utab tab on">Estadísticas</button><button data-utab="avatar" class="utab tab">Avatar 3D</button><button data-utab="account" class="utab tab">Cuenta</button></div>
+      <h2><span id="util-title">Estadísticas y avatar</span> <button class="close" data-close="dlg-util">✕</button></h2>
+      <div class="r-row"><button data-utab="stats" class="utab tab on">Estadísticas</button><button data-utab="avatar" class="utab tab">Avatar 3D</button></div>
       <div id="utab-stats" class="scroll upane">
         <div class="stat-sum"><div><b id="st-total">—</b><span>en total</span></div><div><b id="st-week">—</b><span>últimos 7 días</span></div><div><b id="st-sessions">—</b><span>sesiones</span></div></div>
         <div class="chart" id="st-chart"></div>
@@ -167,28 +216,6 @@
         <table><thead><tr><th>Juego más jugado</th><th style="width:90px">Tiempo</th><th style="width:110px">Última vez</th></tr></thead><tbody id="st-games"></tbody></table>
       </div>
       <div id="utab-avatar" class="scroll upane hidden"><div id="avatar-host" class="avatar-host"></div><div id="avatar-msg" class="avatar-msg muted"></div></div>
-      <div id="utab-account" class="scroll upane hidden settings">
-        <p id="acc-info" class="muted">Cargando…</p>
-        <fieldset><legend>Contraseña</legend>
-          <div class="r-row"><input id="pw-cur" type="password" placeholder="Actual" class="grow"><input id="pw-new" type="password" placeholder="Nueva" class="grow"><button id="pw-go">Cambiar</button></div>
-        </fieldset>
-        <fieldset><legend>Nombre visible</legend>
-          <div class="r-row"><input id="dn-name" class="grow"><button id="dn-go">Cambiar</button></div>
-        </fieldset>
-        <fieldset><legend>PIN de la cuenta</legend>
-          <div class="r-row"><input id="pin-code" inputmode="numeric" maxlength="4" placeholder="PIN" class="grow"><button id="pin-go">Desbloquear</button></div>
-        </fieldset>
-        <fieldset><legend>Inicio de sesión rápido</legend>
-          <div class="r-row"><input id="ql-code" placeholder="Código que muestra el otro dispositivo" class="grow"><button id="ql-go">Aprobar</button></div>
-        </fieldset>
-        <fieldset><legend>Seguridad</legend>
-          <div class="r-row"><span class="grow muted">Cierra la sesión en todos los demás dispositivos y renueva la cookie.</span><button id="so-go">Cerrar otras sesiones</button></div>
-        </fieldset>
-        <fieldset><legend>Usuarios bloqueados</legend>
-          <div class="r-row"><button id="bl-load">Cargar lista</button><span id="bl-msg" class="muted"></span></div>
-          <div id="bl-list"></div>
-        </fieldset>
-      </div>
     </div>
   </div>
 
@@ -254,7 +281,7 @@
     <li data-act="copy-combo">Copiar usuario:contraseña</li>
     <li data-act="copy-cookie">Copiar cookie</li>
     <li class="sep"></li>
-    <li data-act="util">Utilidades de cuenta…</li>
+    <li data-act="util">Estadísticas y avatar 3D…</li>
     <li data-act="group">Mover a grupo…</li>
     <li data-act="afk">Activar/desactivar anti-AFK</li>
     <li class="sep"></li>

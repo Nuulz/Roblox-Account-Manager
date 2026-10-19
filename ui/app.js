@@ -161,6 +161,7 @@ function fillFields() {
   const a = sel.length === 1 ? sel[0] : null;
   $('alias').value = a?.alias ?? '';
   $('desc').value = a?.description ?? '';
+  showAccount(a);
   if (a?.savedPlaceId) {
     $('place-id').value = a.savedPlaceId;
     $('job-id').value = a.savedJobId;
@@ -529,7 +530,6 @@ function showUtab(name) {
   document.querySelectorAll('.utab').forEach((t) => t.classList.toggle('on', t.dataset.utab === name));
   document.querySelectorAll('.upane').forEach((p) => p.classList.toggle('hidden', p.id !== `utab-${name}`));
   if (name === 'avatar') loadAvatar();
-  if (name === 'account') loadAccInfo();
 }
 document.querySelectorAll('.utab').forEach((t) => t.onclick = () => showUtab(t.dataset.utab));
 
@@ -539,11 +539,7 @@ function openUtil() {
   utilAcc = a;
   avatarFor = null;
   window.avatar3d?.dispose();
-  $('util-title').textContent = `Utilidades de cuenta: ${a.alias || a.username}`;
-  $('dn-name').value = a.displayName || '';
-  ['pw-cur', 'pw-new', 'pin-code', 'ql-code'].forEach((id) => { $(id).value = ''; });
-  $('bl-list').innerHTML = '';
-  $('bl-msg').textContent = '';
+  $('util-title').textContent = `Estadísticas y avatar: ${a.alias || a.username}`;
   open('dlg-util');
   loadStats();
   showUtab('stats');
@@ -576,28 +572,16 @@ async function loadAvatar() {
   } catch (e) { $('avatar-msg').textContent = String(e); avatarFor = null; }
 }
 
-async function util(action, args = {}) {
-  return invoke('account_util', { userId: utilAcc.userId, action, args });
+async function util(action, args = {}, userId = accTarget?.userId) {
+  if (!userId) throw 'Selecciona una cuenta';
+  return invoke('account_util', { userId, action, args });
 }
 async function utilDo(btn, action, args, ok) {
+  if (!accTarget) return toast('error', 'Selecciona una cuenta');
   btn.disabled = true;
   try { const r = await util(action, args); toast('success', ok ?? (typeof r === 'string' ? r : 'Hecho')); return r; }
   catch (e) { toast('error', e); }
   finally { btn.disabled = false; }
-}
-
-async function loadAccInfo() {
-  $('acc-info').textContent = 'Cargando…';
-  try {
-    const i = await util('info');
-    const pin = !i.pinEnabled ? 'sin PIN' : i.pinUnlockedUntil > 0 ? 'PIN desbloqueado' : 'PIN activo';
-    let email = i.email || '?';
-    try {
-      const e = JSON.parse(i.email);
-      email = e.emailAddress ? `${e.emailAddress}${e.verified ? ' (verificado)' : ' (sin verificar)'}` : 'sin correo';
-    } catch {}
-    $('acc-info').textContent = `Robux: ${i.robux ?? '?'} · Correo: ${email} · ${pin}`;
-  } catch (e) { $('acc-info').textContent = String(e); }
 }
 
 $('pw-go').onclick = (e) => {
@@ -605,7 +589,7 @@ $('pw-go').onclick = (e) => {
   utilDo(e.target, 'password', { current: $('pw-cur').value, new: $('pw-new').value });
 };
 $('dn-go').onclick = (e) => utilDo(e.target, 'displayName', { name: $('dn-name').value.trim() });
-$('pin-go').onclick = (e) => utilDo(e.target, 'unlockPin', { pin: $('pin-code').value.trim() }, 'PIN desbloqueado').then(loadAccInfo);
+$('pin-go').onclick = (e) => utilDo(e.target, 'unlockPin', { pin: $('pin-code').value.trim() }, 'PIN desbloqueado').then(() => loadAccInfo(true));
 $('ql-go').onclick = (e) => utilDo(e.target, 'quickLogin', { code: $('ql-code').value.trim() }, 'Inicio de sesión aprobado');
 $('so-go').onclick = async (e) => {
   if (await confirmBox('¿Cerrar la sesión de esta cuenta en todos los demás dispositivos?')) utilDo(e.target, 'signoutOthers');
@@ -761,3 +745,97 @@ document.querySelectorAll('[data-proxy]').forEach((b) => b.onclick = (e) => {
   const r = b.getBoundingClientRect();
   t.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left, clientY: r.bottom }));
 });
+
+// ───────────────────────── pestaña Cuenta
+
+let accTarget = null;
+const infoCache = new Map();
+const accTabOpen = () => !$('rpane-account').classList.contains('hidden');
+
+function showAccount(a) {
+  const changed = accTarget?.userId !== a?.userId;
+  accTarget = a;
+  $('acc-none').classList.toggle('hidden', !!a);
+  $('acc-body').classList.toggle('hidden', !a);
+  if (!a) return;
+  $('acc-av').src = a.avatarUrl || '';
+  $('acc-name').textContent = a.alias || a.displayName || a.username;
+  $('acc-user').textContent = `@${a.username} · ${a.userId}`;
+  $('acc-age').textContent = a.ageDays > 0 ? `${a.ageDays} d` : 'hoy';
+  $('fr-target').innerHTML = accounts.filter((x) => x.userId !== a.userId)
+    .map((x) => `<option value="${x.userId}">${esc(x.alias ? `${x.alias} (${x.username})` : x.username)}</option>`).join('');
+  if (!changed) return;
+  if (document.activeElement?.id !== 'dn-name') $('dn-name').value = a.displayName || '';
+  ['pw-cur', 'pw-new', 'pin-code', 'ql-code', 'em-new', 'em-pass'].forEach((id) => { $(id).value = ''; });
+  $('bl-list').innerHTML = $('bl-msg').textContent = $('of-list').innerHTML = $('of-msg').textContent = '';
+  if (accTabOpen()) loadAccInfo();
+}
+
+function paintInfo(i) {
+  let email = 'sin correo';
+  try {
+    const e = typeof i.email === 'string' ? JSON.parse(i.email) : i.email;
+    if (e?.emailAddress) email = e.verified ? 'verificado' : 'sin verificar';
+  } catch { email = '?'; }
+  $('acc-robux').textContent = i.robux ?? '?';
+  $('acc-email').textContent = email;
+  $('acc-pin').textContent = !i.pinEnabled ? 'no' : i.pinUnlockedUntil > 0 ? 'abierto' : 'activo';
+}
+
+async function loadAccInfo(force = false) {
+  const a = accTarget;
+  if (!a) return;
+  const hit = infoCache.get(a.userId);
+  if (hit && !force && Date.now() - hit.at < 120000) return paintInfo(hit.info);
+  ['acc-robux', 'acc-email', 'acc-pin'].forEach((id) => { $(id).textContent = '…'; });
+  try {
+    const info = await util('info', {}, a.userId);
+    infoCache.set(a.userId, { at: Date.now(), info });
+    if (accTarget?.userId === a.userId) paintInfo(info);
+  } catch (e) {
+    if (accTarget?.userId === a.userId) ['acc-robux', 'acc-email', 'acc-pin'].forEach((id) => { $(id).textContent = '?'; });
+    toast('error', e);
+  }
+}
+$('acc-refresh').onclick = () => loadAccInfo(true);
+document.querySelector('[data-rtab=account]').addEventListener('click', () => loadAccInfo());
+
+$('of-load').onclick = async (e) => {
+  const a = accTarget;
+  if (!a) return;
+  e.target.disabled = true;
+  $('of-msg').textContent = 'Cargando…';
+  try {
+    const list = await util('outfits', {}, a.userId);
+    $('of-msg').textContent = list.length ? 'Clic en un traje para ponérselo a las cuentas seleccionadas.' : 'Esta cuenta no tiene trajes guardados.';
+    $('of-list').innerHTML = list.map((o) => `<button class="outfit" data-outfit="${o.id}" title="${esc(o.name)}">${o.image ? `<img src="${esc(o.image)}" alt="">` : '<i></i>'}<span>${esc(o.name)}</span></button>`).join('');
+  } catch (err) { $('of-msg').textContent = String(err); }
+  finally { e.target.disabled = false; }
+};
+$('of-list').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-outfit]');
+  if (!b) return;
+  const targets = selectedAccounts();
+  if (targets.length > 1 && !await confirmBox(`¿Poner este traje a ${targets.length} cuentas?`)) return;
+  b.disabled = true;
+  let ok = 0;
+  for (const t of targets) {
+    try { const m = await util('applyOutfit', { outfitId: Number(b.dataset.outfit) }, t.userId); ok++; if (targets.length === 1) toast('success', m); }
+    catch (err) { toast('error', `${t.username}: ${err}`); }
+  }
+  if (targets.length > 1) toast('success', `Traje aplicado en ${ok} de ${targets.length} cuentas`);
+  b.disabled = false;
+});
+
+$('em-go').onclick = (e) => {
+  const email = $('em-new').value.trim();
+  if (!email.includes('@')) return toast('error', 'Escribe un correo válido');
+  utilDo(e.target, 'email', { email, password: $('em-pass').value }).then(() => loadAccInfo(true));
+};
+$('fp-go').onclick = (e) => utilDo(e.target, 'followPrivacy', { level: Number($('fp-level').value) });
+$('fr-go').onclick = (e) => {
+  const id = Number($('fr-target').value);
+  if (!id) return toast('error', 'No hay otra cuenta a la que enviarla');
+  utilDo(e.target, 'friend', { targetId: id });
+};
+showAccount(null);

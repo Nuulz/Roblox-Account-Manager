@@ -126,6 +126,39 @@ async fn account_util(user_id: i64, action: String, args: serde_json::Value) -> 
             api.quick_login_validate(&cookie, &code).await.map_err(ops::err)?;
             Ok(info)
         }
+        "outfits" => {
+            let list = api.outfits(user_id).await.map_err(ops::err)?;
+            let ids: Vec<i64> = list.iter().map(|(id, _)| *id).collect();
+            let thumbs = api.outfit_thumbnails(&ids).await;
+            Ok(json!(list
+                .into_iter()
+                .map(|(id, name)| json!({ "id": id, "name": name, "image": thumbs.get(&id) }))
+                .collect::<Vec<_>>()))
+        }
+        "applyOutfit" => {
+            let id = args["outfitId"].as_i64().ok_or("outfitId inválido")?;
+            let details = api.outfit_details(id).await.map_err(ops::err)?;
+            let invalid = api.set_avatar(&cookie, &details).await.map_err(ops::err)?;
+            Ok(json!(if invalid.is_empty() {
+                "Traje aplicado".to_string()
+            } else {
+                format!("Traje aplicado; {} accesorio(s) no se pudieron poner porque la cuenta no los tiene", invalid.len())
+            }))
+        }
+        "email" => {
+            api.change_email(&cookie, &arg("password"), &arg("email")).await.map_err(ops::err)?;
+            Ok(json!("Correo cambiado; Roblox enviará un mensaje para verificarlo"))
+        }
+        "followPrivacy" => {
+            let level = args["level"].as_u64().ok_or("Nivel inválido")? as u8;
+            api.set_follow_privacy(&cookie, level).await.map_err(ops::err)?;
+            Ok(json!("Privacidad actualizada"))
+        }
+        "friend" => {
+            let id = args["targetId"].as_i64().ok_or("Cuenta destino inválida")?;
+            api.send_friend_request(&cookie, id).await.map_err(ops::err)?;
+            Ok(json!("Solicitud de amistad enviada"))
+        }
         "blocked" => api.blocked_list(&cookie).await.map_err(ops::err),
         "unblock" => {
             let id = args["userId"].as_i64().ok_or("userId inválido")?;

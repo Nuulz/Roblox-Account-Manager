@@ -178,3 +178,31 @@ button.tool { height: auto; padding: 8px; display: flex; flex-direction: column;
 button.tool b { font-size: 18px; font-weight: normal; }
 button.tool small { color: var(--muted); font-size: 10px; }
 button.tool.soon { border-style: dashed; }
+
+#rpane-account { overflow: auto; padding-right: 2px; }
+.acc-body { display: flex; flex-direction: column; gap: 6px; }
+.acc-card { display: flex; align-items: center; gap: 8px; }
+.acc-av { width: 42px; height: 42px; border-radius: 50%; background: var(--ctl); border: 1px solid var(--ctl-line); object-fit: cover; }
+.acc-av:not([src]), .acc-av[src=""] { visibility: hidden; }
+.acc-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.acc-chips div { border: 1px solid var(--ctl-line); background: var(--ctl); padding: 3px 5px; min-width: 0; }
+.acc-chips b { display: block; color: var(--timer); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-chips span { color: var(--muted); font-size: 10px; }
+details { border: 1px solid var(--ctl-line); background: var(--ctl); }
+details > summary { cursor: pointer; padding: 4px 8px; color: var(--group); list-style: none; }
+details > summary::before { content: "▸ "; }
+details[open] > summary::before { content: "▾ "; }
+details[open] > summary { border-bottom: 1px solid var(--head-line); }
+details > :not(summary) { margin: 6px 8px; }
+details textarea { height: auto; }
+label.sub { margin: 8px 8px 2px; color: var(--muted); font-size: 11px; }
+select { font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--input-line); height: 24px; min-width: 0; }
+.outfits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; max-height: 220px; overflow: auto; }
+button.outfit { height: auto; padding: 3px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+button.outfit img, button.outfit i { width: 100%; aspect-ratio: 1; background: var(--list); }
+button.outfit span { font-size: 10px; width: 100%; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.right { min-height: 0; }
+details > textarea, details > div { width: auto; }
+details textarea { width: calc(100% - 16px); }
+.right .r-row > #btn-desc { width: auto; }
