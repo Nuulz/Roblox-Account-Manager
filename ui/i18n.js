@@ -530,6 +530,14 @@ const I18N_EN = {
   'aplicado': 'applied',
   'Selecciona al menos una cuenta distinta de la de origen': 'Select at least one account other than the source',
 
+  // avisos
+  'Avisos': 'Notices',
+  'Solicitudes de amistad pendientes y mensajes privados sin leer de cada cuenta. Se actualizan al revisar las cuentas.': 'Pending friend requests and unread private messages for each account. They update when you check the accounts.',
+  '{n} solicitud(es)': '{n} request(s)',
+  '{n} mensaje(s)': '{n} message(s)',
+  '{n} avisos': '{n} notices',
+  'nada': 'none',
+
   // mensajes fijos del backend
   'Cuenta no encontrada': 'Account not found',
   'La aplicación no está lista': 'The app is not ready yet',

@@ -39,6 +39,12 @@ pub struct HealthRow {
     pub prev_robux: Option<i64>,
     pub detail: String,
     pub checked_at: String,
+    /// Solicitudes de amistad pendientes; `None` si no se pudo leer.
+    #[serde(default)]
+    pub friend_requests: Option<i64>,
+    /// Mensajes privados sin leer; `None` si no se pudo leer.
+    #[serde(default)]
+    pub unread_messages: Option<i64>,
 }
 
 #[derive(Clone, Serialize)]
@@ -118,6 +124,23 @@ async fn check_one(id: i64, cookie: &str) -> HealthRow {
             st().emit_accounts();
         }
     }
-    let robux = if state == CookieState::Ok { api().robux(cookie, id).await } else { None };
-    HealthRow { user_id: id, state, robux, prev_robux, detail, checked_at: chrono::Local::now().to_rfc3339() }
+    let (robux, friend_requests, unread_messages) = if state == CookieState::Ok {
+        tokio::join!(
+            api().robux(cookie, id),
+            api().count_authed("https://friends.roblox.com/v1/user/friend-requests/count", cookie),
+            api().count_authed("https://privatemessages.roblox.com/v1/messages/unread/count", cookie),
+        )
+    } else {
+        (None, None, None)
+    };
+    HealthRow {
+        user_id: id,
+        state,
+        robux,
+        prev_robux,
+        detail,
+        checked_at: chrono::Local::now().to_rfc3339(),
+        friend_requests,
+        unread_messages,
+    }
 }

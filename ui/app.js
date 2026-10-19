@@ -146,7 +146,7 @@ function render() {
     <tr class="grp" data-group="${esc(g)}"><td colspan="3"><div class="gline">${esc(g)} <span class="n">(${list.length})</span><span class="caret">${collapsed.has(g) ? '▼' : '▲'}</span></div></td></tr>
     ${collapsed.has(g) ? '' : list.map((a) => `
     <tr class="acc ${selected.has(a.userId) ? 'sel' : ''}" data-id="${a.userId}">
-      <td title="${esc(dotTitle(a))}"><span class="cell"><span class="dot ${dotClass(a)}"></span>${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>'}<span class="nm">${hide ? '••••••••' : esc(a.username)}</span>${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}</span></td>
+      <td title="${esc(dotTitle(a))}"><span class="cell"><span class="dot ${dotClass(a)}"></span>${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>'}<span class="nm">${hide ? '••••••••' : esc(a.username)}</span>${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}${noticeTag(a)}</span></td>
       <td>${esc(a.alias)}</td>
       <td title="${esc(a.description)}">${esc(a.description)}</td>
     </tr>`).join('')}`).join('');
@@ -729,6 +729,7 @@ listen('launch-progress', (e) => {
 listen('vip-privacy', (e) => toast('info', T('{username}: la privacidad de servidores privados no está en "Todos"', e.payload)));
 
 async function loadMain() {
+  for (const r of await invoke('health_last').catch(() => [])) health.set(r.userId, r);
   settings = await invoke('settings_get');
   accounts = await invoke('accounts_list');
   syncToggles();
@@ -1029,6 +1030,23 @@ const ago = (iso) => {
   return T('hace {n} d', { n: Math.round(m / 1440) });
 };
 
+function noticeText(r) {
+  if (!r || r.state !== 'ok') return '';
+  const parts = [];
+  if (r.friendRequests) parts.push(T('{n} solicitud(es)', { n: r.friendRequests }));
+  if (r.unreadMessages) parts.push(T('{n} mensaje(s)', { n: r.unreadMessages }));
+  if (parts.length) return `<span class="notice" title="${esc(parts.join(' · '))}">${esc(parts.join(' · '))}</span>`;
+  return r.friendRequests == null && r.unreadMessages == null ? '' : `<span class="muted">${esc(T('nada'))}</span>`;
+}
+
+function noticeTag(a) {
+  const r = health.get(a.userId);
+  const n = (r?.state === 'ok' ? (r.friendRequests || 0) + (r.unreadMessages || 0) : 0);
+  if (!n) return '';
+  const title = [r.friendRequests ? T('{n} solicitud(es)', { n: r.friendRequests }) : '', r.unreadMessages ? T('{n} mensaje(s)', { n: r.unreadMessages }) : ''].filter(Boolean).join(' · ');
+  return `<span class="afk ntag" title="${esc(title)}">${esc(T('{n} avisos', { n }))}</span>`;
+}
+
 function healthState(r, a) {
   if (healthChecking?.has(a.userId) && !r?.fresh) return ['checking', T('Revisando…')];
   if (!r) return a.needsLogin ? ['expired', T('Requiere iniciar sesión')] : ['', T('Sin revisar')];
@@ -1064,10 +1082,11 @@ function renderHealth() {
       <td title="${esc(r?.state === 'unknown' ? r.detail : r?.state === 'mismatch' ? T('La cookie guardada pertenece a {name}', { name: r.detail }) : '')}"><span class="st ${cls}"><i></i>${esc(label)}</span></td>
       <td class="num">${fmt(r?.robux)}</td>
       <td class="num">${d ? `<span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${fmt(d)}</span>` : ''}</td>
+      <td>${noticeText(r)}</td>
       <td>${a.ageDays > 0 ? `${a.ageDays} d` : T('hoy')}</td>
       <td class="muted">${esc(ago(r?.checkedAt))}</td>
       <td>${act}</td></tr>`;
-  }).join('') || `<tr><td colspan="7" class="muted">${esc(T('No hay cuentas.'))}</td></tr>`;
+  }).join('') || `<tr><td colspan="8" class="muted">${esc(T('No hay cuentas.'))}</td></tr>`;
 }
 
 async function runHealth(ids) {
@@ -1089,7 +1108,7 @@ function endHealth() {
 }
 listen('health-progress', (e) => {
   const p = e.payload;
-  if (p.row) health.set(p.row.userId, { ...p.row, fresh: true });
+  if (p.row) { health.set(p.row.userId, { ...p.row, fresh: true }); render(); }
   if (p.done) {
     endHealth();
     const bad = [...health.values()].filter((r) => r.state === 'expired' || r.state === 'mismatch').length;

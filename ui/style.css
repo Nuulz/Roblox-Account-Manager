@@ -336,3 +336,7 @@ th .help { vertical-align: 0; }
 .av-items div span:last-child { color: var(--muted); font-size: 11px; }
 .av-res { display: flex; flex-direction: column; gap: 3px; max-height: 120px; overflow: auto; }
 .av-res .ok { color: var(--ok); } .av-res .bad { color: var(--bad); }
+.notice { color: var(--studio); }
+.afk.ntag { color: var(--studio); border-color: var(--studio); }
+tr.acc.sel .afk.ntag { color: #fff; border-color: rgba(255,255,255,.6); }
+.card.big.wide { width: min(900px, calc(100vw - 24px)); }

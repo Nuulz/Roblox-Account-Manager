@@ -583,6 +583,15 @@ impl Api {
         Ok(serde_json::from_str(&body)?)
     }
 
+    /// Como `count`, pero con la sesión de la cuenta (solicitudes de amistad, mensajes sin leer…).
+    pub async fn count_authed(&self, url: &str, cookie: &str) -> Option<i64> {
+        let resp = self.req(Method::GET, url, Some(cookie)).send().await.ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        resp.json::<Value>().await.ok()?["count"].as_i64()
+    }
+
     /// Cantidad simple de un endpoint `{ "count": n }` (amigos, seguidores…).
     pub async fn count(&self, url: &str) -> Option<i64> {
         let v: Value = self.req(Method::GET, url, None).send().await.ok()?.json().await.ok()?;
