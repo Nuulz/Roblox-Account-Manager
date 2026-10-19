@@ -134,6 +134,26 @@ impl Api {
         r
     }
 
+    /// Envía la petición y, si Roblox responde 429, espera y reintenta (hasta 4 veces).
+    pub async fn send_retry(&self, rb: RequestBuilder) -> Result<reqwest::Response> {
+        let mut wait = std::time::Duration::from_secs(2);
+        for _ in 0..4 {
+            let resp = rb.try_clone().context("Petición no reintentable")?.send().await?;
+            if resp.status() != StatusCode::TOO_MANY_REQUESTS {
+                return Ok(resp);
+            }
+            let after = resp
+                .headers()
+                .get("retry-after")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.parse::<u64>().ok())
+                .map(std::time::Duration::from_secs);
+            tokio::time::sleep(after.unwrap_or(wait).min(std::time::Duration::from_secs(30))).await;
+            wait *= 2;
+        }
+        Ok(rb.send().await?)
+    }
+
     /// Obtiene un X-CSRF-TOKEN válido para la cookie.
     pub async fn csrf(&self, cookie: &str) -> Result<String> {
         let resp = self
@@ -503,25 +523,35 @@ impl Api {
     }
 
     /// Una página de coleccionables (limiteds). Vacía si el inventario es privado.
-    pub async fn collectibles_page(&self, user_id: i64, cursor: Option<&str>) -> Result<(Vec<Value>, Option<String>)> {
+    /// Con la cookie de la propia cuenta el inventario siempre es visible y el límite de
+    /// peticiones es más holgado. Devuelve None si el inventario es privado (403).
+    pub async fn collectibles_page(&self, user_id: i64, cursor: Option<&str>, cookie: Option<&str>) -> Result<Option<(Vec<Value>, Option<String>)>> {
         let mut url = format!("https://inventory.roblox.com/v1/users/{user_id}/assets/collectibles?limit=100&sortOrder=Asc");
         if let Some(c) = cursor.filter(|c| !c.is_empty()) {
             url.push_str(&format!("&cursor={}", urlencoding::encode(c)));
         }
-        let resp = self.req(Method::GET, &url, None).send().await?;
+        let resp = self.send_retry(self.req(Method::GET, &url, cookie)).await?;
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
+        if status == StatusCode::FORBIDDEN {
+            return Ok(None);
+        }
         if !status.is_success() {
             bail!("Roblox no devolvió el inventario [{}]: {}", status.as_u16(), error_message(&body));
         }
         let v: Value = serde_json::from_str(&body)?;
         let next = v["nextPageCursor"].as_str().filter(|c| !c.is_empty()).map(str::to_string);
-        Ok((v["data"].as_array().cloned().unwrap_or_default(), next))
+        Ok(Some((v["data"].as_array().cloned().unwrap_or_default(), next)))
     }
 
     pub async fn can_view_inventory(&self, user_id: i64) -> Result<bool> {
         let url = format!("https://inventory.roblox.com/v1/users/{user_id}/can-view-inventory");
-        let v: Value = self.req(Method::GET, &url, None).send().await?.json().await?;
+        let resp = self.send_retry(self.req(Method::GET, &url, None)).await?;
+        let status = resp.status();
+        if !status.is_success() {
+            bail!("Roblox no dijo si el inventario es visible [{}]", status.as_u16());
+        }
+        let v: Value = resp.json().await?;
         v["canView"].as_bool().ok_or_else(|| anyhow!("Respuesta inesperada de Roblox"))
     }
 

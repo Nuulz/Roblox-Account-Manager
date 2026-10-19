@@ -411,6 +411,20 @@ function lookupGame() {
 }
 $('place-id').oninput = lookupGame;
 
+// Recuerda el último Place ID / Job ID / usuario a seguir entre sesiones (igual que la v3).
+const launcherFields = { 'place-id': 'savedPlaceId', 'job-id': 'savedJobId', 'follow-user': 'savedFollowUser' };
+function restoreLauncherFields() {
+  for (const [id, key] of Object.entries(launcherFields)) if (!$(id).value) $(id).value = settings.general[key] || '';
+  if ($('place-id').value) lookupGame();
+}
+let launcherSaveTimer;
+for (const [id, key] of Object.entries(launcherFields)) {
+  $(id).addEventListener('change', () => {
+    clearTimeout(launcherSaveTimer);
+    launcherSaveTimer = setTimeout(() => saveSettings((s) => { s.general[key] = $(id).value.trim(); }), 300);
+  });
+}
+
 // ───────────────────────── multi roblox
 
 async function showMulti() {
@@ -423,12 +437,27 @@ async function showMulti() {
   el.title = want && !active ? T('Roblox u otro programa ya lo tiene. Cierra Roblox y haz clic para reintentar.') : '';
 }
 $('multi-chk').onchange = (e) => saveSettings((s) => { s.general.enableMultiRoblox = e.target.checked; });
-$('multi').onclick = async (e) => {
-  e.preventDefault();
-  if (!$('multi').classList.contains('bad')) return;
+// Si Roblox ya está abierto, multi Roblox no se puede activar: ofrece cerrarlo y reintentar.
+let fixingMulti = false;
+async function fixMulti() {
+  if (fixingMulti) return;
+  fixingMulti = true;
+  try { await fixMultiInner(); } finally { fixingMulti = false; }
+}
+async function fixMultiInner() {
   try { await invoke('multi_roblox_apply'); toast('success', T('Multi Roblox activado')); }
-  catch (err) { toast('error', err); }
+  catch {
+    const n = (await invoke('processes_list')).length;
+    if (n && await confirmBox(T('Hay {n} Roblox abierto(s) y no dejan activar multi Roblox. ¿Cerrarlos y activarlo?', { n }))) {
+      try { await invoke('multi_roblox_force'); toast('success', T('Multi Roblox activado')); }
+      catch (err) { toast('error', err); }
+    } else if (!n) toast('error', T('Otro programa tiene el bloqueo de Roblox. Ciérralo y vuelve a intentarlo.'));
+  }
   showMulti();
+}
+$('multi').onclick = (e) => {
+  e.preventDefault();
+  if ($('multi').classList.contains('bad')) fixMulti();
 };
 
 function syncToggles() {
@@ -454,7 +483,7 @@ async function loadServers(more) {
       const pct = s.maxPlayers ? Math.round((s.playing / s.maxPlayers) * 100) : 0;
       return `<tr class="${mine.length ? 'mine' : ''}" title="Job ID: ${esc(s.id)}">
         <td><div class="bar"><i style="width:${pct}%"></i><span>${s.playing}/${s.maxPlayers}</span></div></td>
-        <td>${s.ping}</td><td>${Math.round(s.fps)}</td>
+        <td>${s.ping > 0 ? s.ping : '—'}</td><td>${Math.round(s.fps)}</td>
         <td class="region" data-region="${esc(s.id)}"><button class="lnk" data-reg="${esc(s.id)}">${T('ver')}</button></td>
         <td class="mine-cell">${mine.map((a) => `${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : ''}${esc(a.alias || a.username)}`).join(', ')}</td>
         <td><button data-job="${esc(s.id)}">${T('Usar')}</button></td></tr>`;
@@ -691,7 +720,8 @@ $('set-save').onclick = async () => {
     close('dlg-settings');
   } catch (e) { $('set-err').textContent = e; }
   syncToggles();
-  showMulti();
+  await showMulti();
+  if ($('multi').classList.contains('bad')) fixMulti();
 };
 
 // ───────────────────────── actualizaciones
@@ -734,6 +764,7 @@ async function loadMain() {
   accounts = await invoke('accounts_list');
   syncToggles();
   showMulti();
+  restoreLauncherFields();
   invoke('accounts_refresh_avatars', { ids: accounts.map((a) => a.userId) });
   invoke('accounts_update_presence', { ids: accounts.map((a) => a.userId) });
   if (settings.general.checkForUpdates) checkUpdate(false);
@@ -1044,7 +1075,7 @@ function noticeTag(a) {
   const n = (r?.state === 'ok' ? (r.friendRequests || 0) + (r.unreadMessages || 0) : 0);
   if (!n) return '';
   const title = [r.friendRequests ? T('{n} solicitud(es)', { n: r.friendRequests }) : '', r.unreadMessages ? T('{n} mensaje(s)', { n: r.unreadMessages }) : ''].filter(Boolean).join(' · ');
-  return `<span class="afk ntag" title="${esc(title)}">${esc(T('{n} avisos', { n }))}</span>`;
+  return `<span class="afk ntag" title="${esc(title)}">${esc(T(n === 1 ? '{n} aviso' : '{n} avisos', { n }))}</span>`;
 }
 
 function healthState(r, a) {
@@ -1494,7 +1525,7 @@ function renderFriends() {
   const onlyOn = $('fr-online').checked;
   const all = frData.friends;
   const list = all.filter((f) => (!onlyOn || f.presence > 0) && (!q || [f.name, f.displayName, f.location].some((x) => (x || '').toLowerCase().includes(q))));
-  $('fr-msg').textContent = T('{n} amigo(s) · {g} en juego · {o} en línea', { n: all.length, g: all.filter((f) => f.presence === 2).length, o: all.filter((f) => f.presence === 1).length })
+  $('fr-msg').textContent = T('{n} amigo(s) · {g} en juego · {o} en línea', { n: all.length, g: all.filter((f) => f.presence === 2).length, o: all.filter((f) => f.presence > 0).length })
     + (list.length !== all.length ? ` · ${T('mostrando {n}', { n: list.length })}` : '');
   $('fr-list').innerHTML = list.map((f) => `
     <div class="us">

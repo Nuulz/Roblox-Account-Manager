@@ -353,7 +353,12 @@ fn settings_set(s: settings::Settings) -> CmdResult<()> {
     *st().settings.write() = s.clone();
     st().emit("settings", s);
     webserver::apply();
-    apply_process_settings()
+    // Los ajustes ya quedaron guardados; si multi Roblox no se puede activar, la UI lo
+    // muestra como "(bloqueado)" y ofrece cerrar Roblox, sin impedir el guardado.
+    if let Err(e) = apply_process_settings() {
+        log::warn!("{e}");
+    }
+    Ok(())
 }
 
 /// Aplica multi Roblox y el bloqueo de cookies según la configuración actual.
@@ -376,6 +381,21 @@ fn multi_roblox_status() -> bool {
 
 #[tauri::command]
 fn multi_roblox_apply() -> CmdResult<()> {
+    apply_process_settings()
+}
+
+/// Cierra todos los Roblox abiertos y vuelve a intentar activar multi Roblox.
+#[tauri::command]
+async fn multi_roblox_force() -> CmdResult<()> {
+    for p in process::roblox_processes() {
+        process::kill(p.pid);
+    }
+    for _ in 0..20 {
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        if process::roblox_processes().is_empty() && apply_process_settings().is_ok() {
+            return Ok(());
+        }
+    }
     apply_process_settings()
 }
 
@@ -571,14 +591,17 @@ fn app_uptime_secs() -> u64 {
 // ─────────────────────────────────── setup de la app
 
 fn init_log() {
-    use simplelog::{Config, LevelFilter, WriteLogger};
+    use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
     let path = util::data_path("ram.log");
     // Evita que el log crezca sin límite
     if std::fs::metadata(&path).map(|m| m.len() > 2_000_000).unwrap_or(false) {
         let _ = std::fs::remove_file(&path);
     }
     if let Ok(f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
-        let _ = WriteLogger::init(LevelFilter::Info, Config::default(), f);
+        // Por defecto simplelog escribe la hora en UTC; se usa la hora local del equipo
+        let mut cfg = ConfigBuilder::new();
+        let _ = cfg.set_time_offset_to_local();
+        let _ = WriteLogger::init(LevelFilter::Info, cfg.build(), f);
     }
     log::info!("Roblox Account Manager {} iniciado", env!("CARGO_PKG_VERSION"));
 }
@@ -657,6 +680,7 @@ pub fn run() {
             settings_get,
             settings_set,
             multi_roblox_apply,
+            multi_roblox_force,
             multi_roblox_status,
             // actualizaciones
             update_check,

@@ -110,8 +110,9 @@ async fn limiteds_summary(id: i64) -> Value {
         Err(_) => return Value::Null,
         Ok(true) => {}
     }
-    match api().collectibles_page(id, None).await {
-        Ok((items, next)) => serde_json::json!({
+    match api().collectibles_page(id, None, None).await {
+        Ok(None) => serde_json::json!({ "private": true }),
+        Ok(Some((items, next))) => serde_json::json!({
             "private": false,
             "count": items.len(),
             "more": next.is_some(),

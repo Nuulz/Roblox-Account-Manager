@@ -536,6 +536,9 @@ const I18N_EN = {
   '{n} solicitud(es)': '{n} request(s)',
   '{n} mensaje(s)': '{n} message(s)',
   '{n} avisos': '{n} notices',
+  '{n} aviso': '{n} notice',
+  'Hay {n} Roblox abierto(s) y no dejan activar multi Roblox. ¿Cerrarlos y activarlo?': '{n} Roblox window(s) are open and block multi Roblox. Close them and enable it?',
+  'Otro programa tiene el bloqueo de Roblox. Ciérralo y vuelve a intentarlo.': 'Another program holds the Roblox lock. Close it and try again.',
   'nada': 'none',
 
   // mensajes fijos del backend
@@ -617,7 +620,8 @@ const I18N_EN_PATTERNS = [
 
 let LANG = (() => {
   try { const l = localStorage.getItem('lang'); if (l === 'es' || l === 'en') return l; } catch {}
-  return (navigator.language || 'es').toLowerCase().startsWith('es') ? 'es' : 'en';
+  // Español por defecto (idioma original de la app); se cambia en Ajustes
+  return 'es';
 })();
 
 function translatePattern(text, depth) {

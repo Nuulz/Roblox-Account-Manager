@@ -46,26 +46,19 @@ pub struct Overview {
     pub icons: HashMap<i64, String>,
 }
 
-async fn one(user_id: i64) -> AccountInventory {
+async fn one(user_id: i64, cookie: String) -> AccountInventory {
     let mut inv = AccountInventory { user_id, private: false, items: Vec::new(), rap: 0, truncated: false, error: String::new() };
-    match api().can_view_inventory(user_id).await {
-        Ok(false) => {
-            inv.private = true;
-            return inv;
-        }
-        Ok(true) => {}
-        Err(e) => {
-            inv.error = e.to_string();
-            return inv;
-        }
-    }
     let mut cursor: Option<String> = None;
     for page in 0..MAX_PAGES {
         if page > 0 {
             tokio::time::sleep(PACE).await;
         }
-        let (data, next) = match api().collectibles_page(user_id, cursor.as_deref()).await {
-            Ok(r) => r,
+        let (data, next) = match api().collectibles_page(user_id, cursor.as_deref(), Some(&cookie)).await {
+            Ok(Some(r)) => r,
+            Ok(None) => {
+                inv.private = true;
+                break;
+            }
             Err(e) => {
                 inv.error = e.to_string();
                 break;
@@ -98,16 +91,22 @@ async fn one(user_id: i64) -> AccountInventory {
 }
 
 pub async fn overview(ids: Vec<i64>) -> CmdResult<Overview> {
-    let known: Vec<i64> = st().accounts.read().iter().map(|a| a.user_id).filter(|id| ids.contains(id)).collect();
+    let known: Vec<(i64, String)> = st()
+        .accounts
+        .read()
+        .iter()
+        .filter(|a| ids.contains(&a.user_id))
+        .map(|a| (a.user_id, a.security_token.clone()))
+        .collect();
     if known.is_empty() {
         return Err("Selecciona al menos una cuenta".into());
     }
     let mut accounts = Vec::new();
-    for (i, id) in known.into_iter().enumerate() {
+    for (i, (id, cookie)) in known.into_iter().enumerate() {
         if i > 0 {
             tokio::time::sleep(PACE).await;
         }
-        accounts.push(one(id).await);
+        accounts.push(one(id, cookie).await);
     }
     let mut assets: Vec<i64> = accounts.iter().flat_map(|a| a.items.iter().map(|i| i.asset_id)).collect();
     assets.sort_unstable();
