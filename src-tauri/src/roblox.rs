@@ -240,12 +240,23 @@ impl Api {
 
     pub async fn presence(&self, ids: &[i64], cookie: Option<&str>) -> Result<Vec<Presence>> {
         let mut out = Vec::new();
+        let mut token: Option<String> = None;
         for chunk in ids.chunks(50) {
-            let resp = self
-                .req(Method::POST, "https://presence.roblox.com/v1/presence/users", cookie)
-                .json(&json!({ "userIds": chunk }))
-                .send()
-                .await?;
+            let send = |t: Option<&str>| {
+                let mut r = self.req(Method::POST, "https://presence.roblox.com/v1/presence/users", cookie);
+                if let Some(t) = t {
+                    r = r.header("X-CSRF-TOKEN", t);
+                }
+                r.json(&json!({ "userIds": chunk })).send()
+            };
+            let mut resp = send(token.as_deref()).await?;
+            // Con cookie, Roblox puede pedir el token CSRF: viene en la cabecera del 403 y se reintenta una vez.
+            if resp.status() == StatusCode::FORBIDDEN {
+                if let Some(t) = resp.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()).map(str::to_string) {
+                    token = Some(t);
+                    resp = send(token.as_deref()).await?;
+                }
+            }
             if !resp.status().is_success() {
                 bail!("Presencia: estado {}", resp.status());
             }
@@ -560,6 +571,44 @@ impl Api {
     pub async fn count(&self, url: &str) -> Option<i64> {
         let v: Value = self.req(Method::GET, url, None).send().await.ok()?.json().await.ok()?;
         v["count"].as_i64()
+    }
+
+    /// IDs de los amigos de un usuario (Roblox ya no incluye los nombres en esta respuesta).
+    pub async fn friend_ids(&self, user_id: i64) -> Result<Vec<i64>> {
+        let url = format!("https://friends.roblox.com/v1/users/{user_id}/friends");
+        let resp = self.req(Method::GET, &url, None).send().await?;
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            bail!("Roblox no devolvió los amigos [{}]: {}", status.as_u16(), error_message(&body));
+        }
+        let v: Value = serde_json::from_str(&body)?;
+        Ok(v["data"].as_array().into_iter().flatten().filter_map(|f| f["id"].as_i64()).collect())
+    }
+
+    /// Nombres de muchos usuarios a la vez: id → (nombre, nombre visible).
+    pub async fn user_names(&self, ids: &[i64]) -> HashMap<i64, (String, String)> {
+        let mut out = HashMap::new();
+        for chunk in ids.chunks(100) {
+            let Ok(resp) = self
+                .req(Method::POST, "https://users.roblox.com/v1/users", None)
+                .json(&json!({ "userIds": chunk, "excludeBannedUsers": false }))
+                .send()
+                .await
+            else {
+                continue;
+            };
+            if let Ok(v) = resp.json::<Value>().await {
+                for u in v["data"].as_array().into_iter().flatten() {
+                    if let Some(id) = u["id"].as_i64() {
+                        let name = u["name"].as_str().unwrap_or_default().to_string();
+                        let display = u["displayName"].as_str().unwrap_or(&name).to_string();
+                        out.insert(id, (name, display));
+                    }
+                }
+            }
+        }
+        out
     }
 
     /// Grupos de un usuario con su rol en cada uno. Es público: no necesita cookie.

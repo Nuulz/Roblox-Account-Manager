@@ -447,6 +447,21 @@ const I18N_EN = {
   'Escribe al menos 3 caracteres': 'Type at least 3 characters',
   'Roblox está limitando las búsquedas; espera unos segundos': 'Roblox is rate-limiting searches; wait a few seconds',
 
+  // amigos
+  'Amigos conectados': 'Online friends',
+  'Amigos de todas tus cuentas': 'Friends of all your accounts',
+  'Filtrar por nombre o juego': 'Filter by name or game',
+  'Solo conectados': 'Online only',
+  '"Unirse" usa tus cuentas que son amigas de esa persona; "Con selección" usa las cuentas seleccionadas en la lista. Roblox solo muestra el juego si la privacidad de tu amigo lo permite.': '"Join" uses your accounts that are friends with that person; "With selection" uses the accounts selected in the list. Roblox only shows the game if your friend\'s privacy allows it.',
+  'Leyendo los amigos de {n} cuenta(s)…': 'Reading the friends of {n} account(s)…',
+  'No se pudieron leer los amigos de {n} cuenta(s)': "Couldn't read the friends of {n} account(s)",
+  'Pulsa "Cargar" para ver los amigos de tus cuentas.': 'Press "Load" to see the friends of your accounts.',
+  '{n} amigo(s) · {g} en juego · {o} en línea': '{n} friend(s) · {g} in game · {o} online',
+  'Unirse ({n})': 'Join ({n})',
+  'Con selección': 'With selection',
+  'Ningún amigo conectado ahora mismo.': 'No friends online right now.',
+  'Ningún amigo coincide.': 'No friend matches.',
+
   // mensajes fijos del backend
   'Contraseña cambiada': 'Password changed',
   'Correo cambiado; Roblox enviará un mensaje para verificarlo': 'Email changed; Roblox will send a message to verify it',

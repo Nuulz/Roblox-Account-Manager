@@ -1391,6 +1391,69 @@ $('inv-rows').addEventListener('click', (e) => {
   if (d.iopen) invoke('browser_open', { userId: Number(d.iuser), path: `/catalog/${d.iopen}` }).catch((err) => toast('error', T(String(err))));
 });
 
+// ───────────────────────── amigos conectados
+
+let frData = null;
+
+async function loadFriends(ids) {
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+  ['fr-all', 'fr-sel'].forEach((id) => { $(id).disabled = true; });
+  $('fr-msg').textContent = T('Leyendo los amigos de {n} cuenta(s)…', { n: ids.length });
+  try {
+    frData = await invoke('friends_overview', { ids });
+    renderFriends();
+    if (frData.failed.length) toast('error', T('No se pudieron leer los amigos de {n} cuenta(s)', { n: frData.failed.length }));
+  } catch (e) { $('fr-msg').textContent = T(String(e)); }
+  finally { ['fr-all', 'fr-sel'].forEach((id) => { $(id).disabled = false; }); }
+}
+
+function renderFriends() {
+  if (!frData) { $('fr-list').innerHTML = `<p class="muted" style="padding:8px">${esc(T('Pulsa "Cargar" para ver los amigos de tus cuentas.'))}</p>`; $('fr-msg').textContent = ''; return; }
+  const q = $('fr-filter').value.trim().toLowerCase();
+  const onlyOn = $('fr-online').checked;
+  const all = frData.friends;
+  const list = all.filter((f) => (!onlyOn || f.presence > 0) && (!q || [f.name, f.displayName, f.location].some((x) => (x || '').toLowerCase().includes(q))));
+  $('fr-msg').textContent = T('{n} amigo(s) · {g} en juego · {o} en línea', { n: all.length, g: all.filter((f) => f.presence === 2).length, o: all.filter((f) => f.presence === 1).length })
+    + (list.length !== all.length ? ` · ${T('mostrando {n}', { n: list.length })}` : '');
+  $('fr-list').innerHTML = list.map((f) => `
+    <div class="us">
+      ${f.avatar ? `<img src="${esc(f.avatar)}" alt="" loading="lazy">` : '<div class="noimg"></div>'}
+      <div class="info">
+        <b>${esc(f.displayName || f.name || f.id)}</b>
+        <div class="sub">@${esc(f.name)} · ID ${f.id}</div>
+        <div class="sub"><span class="pres p${f.presence}"><i></i>${esc(presLabel(f))}</span></div>
+        <div class="via">${f.via.map((id) => { const a = accounts.find((x) => x.userId === id); return `<span class="mem">${avImg(a)}${esc(a ? (a.alias || a.username) : id)}</span>`; }).join('')}</div>
+      </div>
+      <div class="acts">
+        <button class="go" data-fjoin="${f.id}" ${f.presence === 2 ? '' : 'disabled'}>${esc(T('Unirse ({n})', { n: f.via.length }))}</button>
+        <button data-fjoinsel="${f.id}" ${f.presence === 2 ? '' : 'disabled'}>${esc(T('Con selección'))}</button>
+        <button data-fprof="${f.id}">${esc(T('Abrir en Roblox'))}</button>
+      </div>
+    </div>`).join('') || `<p class="muted" style="padding:8px">${esc(T(onlyOn ? 'Ningún amigo conectado ahora mismo.' : 'Ningún amigo coincide.'))}</p>`;
+}
+
+async function followWith(f, ids) {
+  ids = ids.filter((id) => id !== f.id);
+  if (!ids.length) return toast('error', T('Selecciona al menos una cuenta'));
+  if (ids.length > 1 && !await confirmBox(T('¿Seguir a {name} con {n} cuentas? Se abrirán {n} Roblox.', { name: f.name, n: ids.length }))) return;
+  launch(ids, { placeId: f.id, jobId: '', followUser: true, joinVip: false });
+  toast('info', T('Siguiendo a {name}…', { name: f.name }));
+  close('dlg-friends');
+}
+
+$('btn-friends').onclick = () => { renderFriends(); open('dlg-friends'); };
+$('fr-all').onclick = () => loadFriends(accounts.map((a) => a.userId));
+$('fr-sel').onclick = () => loadFriends(orderedIds().filter((id) => selected.has(id)));
+$('fr-filter').oninput = $('fr-online').onchange = renderFriends;
+$('fr-list').addEventListener('click', (e) => {
+  const d = e.target.dataset;
+  const f = frData?.friends.find((x) => x.id === Number(d.fjoin || d.fjoinsel || d.fprof));
+  if (!f) return;
+  if (d.fjoin) followWith(f, orderedIds().filter((id) => f.via.includes(id)));
+  if (d.fjoinsel) followWith(f, orderedIds().filter((id) => selected.has(id)));
+  if (d.fprof) invoke('browser_open', { userId: f.via[0], path: `/users/${f.id}/profile` }).catch((err) => toast('error', T(String(err))));
+});
+
 // ───────────────────────── buscar usuarios
 
 let usResults = [];

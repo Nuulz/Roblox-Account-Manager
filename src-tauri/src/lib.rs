@@ -2,6 +2,7 @@ mod account;
 mod browser;
 mod clientsettings;
 mod crypto;
+mod friends;
 mod games;
 mod groups;
 mod inventory;
@@ -450,6 +451,13 @@ fn health_cancel() {
     health::cancel();
 }
 
+// ─────────────────────────────────── amigos
+
+#[tauri::command]
+async fn friends_overview(ids: Vec<i64>) -> CmdResult<friends::Overview> {
+    friends::overview(ids).await
+}
+
 // ─────────────────────────────────── inventario y usuarios
 
 #[tauri::command]
@@ -654,6 +662,8 @@ pub fn run() {
             health_check,
             health_last,
             health_cancel,
+            // amigos
+            friends_overview,
             // inventario y usuarios
             inventory_overview,
             users_search,

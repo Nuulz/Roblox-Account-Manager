@@ -303,3 +303,4 @@ table.inv td:first-child img, table.inv td:first-child .noimg { width: 36px; hei
 .pres i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .pres.p1 i { background: var(--online); } .pres.p2 i { background: var(--ok); } .pres.p3 i { background: var(--studio); }
 .us .mine { font-size: 10px; color: var(--timer); border: 1px solid var(--timer); padding: 0 4px; margin-left: 4px; }
+.us .via { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
