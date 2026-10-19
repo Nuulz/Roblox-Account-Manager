@@ -204,6 +204,11 @@ pub async fn join_server(user_id: i64, mut req: JoinRequest) -> CmdResult<()> {
 
 /// Lanza varias cuentas en cola, respetando el retraso o esperando al lanzador.
 pub async fn launch_many(ids: Vec<i64>, req: JoinRequest) {
+    launch_many_with(ids, req, None, true).await
+}
+
+/// `delay` reemplaza el retraso de los ajustes; con `use_saved`, cada cuenta usa su Place/Job guardado.
+pub async fn launch_many_with(ids: Vec<i64>, req: JoinRequest, delay: Option<u64>, use_saved: bool) {
     st().cancel_launching();
     let generation = st().launch_gen.load(Ordering::SeqCst);
     st().launching.store(true, Ordering::SeqCst);
@@ -218,7 +223,7 @@ pub async fn launch_many(ids: Vec<i64>, req: JoinRequest) {
             LaunchProgress { current: i + 1, total, username: acc.username.clone(), done: false },
         );
         let mut r = req.clone();
-        if !r.follow_user {
+        if use_saved && !r.follow_user {
             if let Ok(pid) = acc.field("SavedPlaceId").parse::<i64>() {
                 r.place_id = pid;
             }
@@ -240,7 +245,7 @@ pub async fn launch_many(ids: Vec<i64>, req: JoinRequest) {
         }
         let (async_join, delay) = {
             let s = st().settings.read();
-            (s.general.async_join, s.general.account_join_delay)
+            (s.general.async_join && delay.is_none(), delay.unwrap_or(s.general.account_join_delay))
         };
         if async_join {
             st().launch_next.notified().await;

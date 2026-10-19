@@ -206,3 +206,24 @@ button.outfit span { font-size: 10px; width: 100%; overflow: hidden; text-overfl
 details > textarea, details > div { width: auto; }
 details textarea { width: calc(100% - 16px); }
 .right .r-row > #btn-desc { width: auto; }
+
+.prof-quick select { height: 24px; }
+.right .r-row > #prof-quick-go { width: 30px; }
+.prof-list { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.prof { display: flex; align-items: center; gap: 8px; border: 1px solid var(--ctl-line); background: var(--ctl); padding: 6px 8px; }
+.prof .info { flex: 1; min-width: 0; }
+.prof .info b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prof .info span { color: var(--muted); font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prof .avs { display: flex; }
+.prof .avs .av { width: 22px; height: 22px; margin-right: -6px; border: 2px solid var(--ctl); }
+.prof .avs .more { font-size: 10px; color: var(--muted); margin-left: 10px; align-self: center; }
+.prof button.go { border-color: var(--sel); color: var(--timer); }
+.pe-form label { margin: 4px 0; }
+.pe-accs { padding: 4px; }
+.pe-acc { display: flex; align-items: center; gap: 6px; padding: 2px 4px; height: 28px; }
+.pe-acc:hover { background: rgba(127,127,127,.12); }
+.pe-acc .ord { width: 22px; text-align: right; color: var(--timer); font-weight: 600; font-size: 11px; }
+.pe-acc .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-acc button { height: 20px; width: 22px; padding: 0; }
+.pe-acc.off .nm, .pe-acc.off .av { opacity: .45; }
+.prof .info > span { white-space: normal; }

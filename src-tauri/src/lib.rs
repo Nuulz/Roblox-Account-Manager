@@ -5,6 +5,7 @@ mod crypto;
 mod games;
 mod ops;
 mod process;
+mod profiles;
 mod regions;
 mod roblox;
 mod settings;
@@ -388,6 +389,28 @@ fn window_move(hwnd: isize, x: i32, y: i32, w: i32, h: i32) {
     process::move_window(hwnd, x, y, w, h);
 }
 
+// ─────────────────────────────────── perfiles de lanzamiento
+
+#[tauri::command]
+fn profiles_list() -> Vec<profiles::Profile> {
+    profiles::list()
+}
+
+#[tauri::command]
+fn profile_save(profile: profiles::Profile) -> CmdResult<profiles::Profile> {
+    profiles::upsert(profile)
+}
+
+#[tauri::command]
+fn profile_delete(id: i64) -> CmdResult<()> {
+    profiles::delete(id)
+}
+
+#[tauri::command]
+async fn profile_launch(id: i64) -> CmdResult<()> {
+    profiles::launch(id).await
+}
+
 // ─────────────────────────────────── navegador
 
 #[tauri::command]
@@ -514,6 +537,11 @@ pub fn run() {
             window_close,
             window_minimize,
             window_move,
+            // perfiles
+            profiles_list,
+            profile_save,
+            profile_delete,
+            profile_launch,
             // navegador
             browser_open,
             browser_login,

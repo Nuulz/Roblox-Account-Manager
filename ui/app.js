@@ -869,6 +869,145 @@ async function relogin() {
     .catch((err) => toast('error', T(String(err))));
 }
 
+// ───────────────────────── perfiles de lanzamiento
+
+let profiles = [];
+let peId = 0;
+let peOrder = [];
+
+const accName = (a) => (a.alias ? `${a.alias} (${a.username})` : a.username);
+const avImg = (a) => (a?.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>');
+
+async function loadProfiles() {
+  profiles = await invoke('profiles_list').catch(() => []);
+  renderProfiles();
+}
+
+function renderProfiles() {
+  const q = $('prof-quick');
+  const keep = q.value;
+  q.innerHTML = profiles.length
+    ? profiles.map((p) => `<option value="${p.id}">${esc(p.name)} · ${p.userIds.length}</option>`).join('')
+    : `<option value="">${esc(T('Sin perfiles: créalos en Herramientas'))}</option>`;
+  if (profiles.some((p) => String(p.id) === keep)) q.value = keep;
+  q.disabled = $('prof-quick-go').disabled = !profiles.length;
+
+  $('prof-list').innerHTML = profiles.length ? profiles.map((p) => {
+    const accs = p.userIds.map((id) => accounts.find((a) => a.userId === id));
+    const found = accs.filter(Boolean);
+    const missing = accs.length - found.length;
+    const where = p.jobId ? (p.jobId.includes('privateServerLinkCode') ? T('servidor privado') : T('servidor fijo')) : T('servidor según ajustes');
+    const delay = p.delaySecs == null ? T('retraso de Ajustes') : T('{n} s entre cuentas', { n: p.delaySecs });
+    return `<div class="prof">
+      <div class="avs">${found.slice(0, 5).map(avImg).join('')}${found.length > 5 ? `<span class="more">+${found.length - 5}</span>` : ''}</div>
+      <div class="info"><b>${esc(p.name)}</b>
+        <span>${esc(T('{n} cuenta(s)', { n: found.length }))}${missing ? ` · <span style="color:var(--bad);display:inline">${esc(T('{n} ya no existe(n)', { n: missing }))}</span>` : ''} · Place ${p.placeId} · ${esc(where)} · ${esc(delay)}</span></div>
+      <button class="go" data-plaunch="${p.id}">▶ ${esc(T('Lanzar'))}</button><button data-pedit="${p.id}">${esc(T('Editar'))}</button><button data-pdel="${p.id}">✕</button>
+    </div>`;
+  }).join('') : `<p class="muted" style="padding:8px">${esc(T('Todavía no hay perfiles. Selecciona cuentas en la lista y pulsa "Nuevo perfil".'))}</p>`;
+}
+
+async function launchProfile(id) {
+  const p = profiles.find((x) => x.id === id);
+  if (!p) return;
+  const n = p.userIds.filter((uid) => accounts.some((a) => a.userId === uid)).length;
+  if (!n) return toast('error', T('Ninguna cuenta del perfil existe ya'));
+  if (n > 1 && !await confirmBox(T('¿Lanzar "{name}"? Se abrirán {n} Roblox.', { name: p.name, n }))) return;
+  try { await invoke('profile_launch', { id }); toast('info', T('Lanzando perfil {name}', { name: p.name })); }
+  catch (e) { toast('error', T(String(e))); }
+}
+
+function openProfileEditor(p) {
+  peId = p?.id ?? 0;
+  $('pe-title').textContent = T(p ? 'Editar perfil' : 'Nuevo perfil');
+  $('pe-name').value = p?.name ?? '';
+  $('pe-place').value = p?.placeId ?? $('place-id').value.trim();
+  $('pe-job').value = p?.jobId ?? $('job-id').value.trim();
+  $('pe-delay').value = p?.delaySecs ?? '';
+  $('pe-err').textContent = '';
+  peOrder = p ? p.userIds.filter((id) => accounts.some((a) => a.userId === id)) : orderedIds().filter((id) => selected.has(id));
+  renderPeAccs();
+  peGame();
+  open('dlg-profile-edit');
+  $('pe-name').focus();
+}
+
+function renderPeAccs() {
+  const rest = accounts.filter((a) => !peOrder.includes(a.userId));
+  const row = (a, i) => `<div class="pe-acc ${i < 0 ? 'off' : ''}">
+    <input type="checkbox" data-pe="${a.userId}" ${i >= 0 ? 'checked' : ''}>
+    <span class="ord">${i >= 0 ? i + 1 : ''}</span>${avImg(a)}<span class="nm">${esc(accName(a))}</span>
+    ${i >= 0 ? `<button data-up="${a.userId}" ${i === 0 ? 'disabled' : ''}>▲</button><button data-down="${a.userId}" ${i === peOrder.length - 1 ? 'disabled' : ''}>▼</button>` : ''}
+  </div>`;
+  $('pe-accs').innerHTML = peOrder.map((id, i) => row(accounts.find((a) => a.userId === id), i)).join('') + rest.map((a) => row(a, -1)).join('');
+  $('pe-count').textContent = T('({n} elegidas)', { n: peOrder.length });
+}
+
+let peTimer = null;
+function peGame() {
+  clearTimeout(peTimer);
+  const id = Number($('pe-place').value.trim());
+  $('pe-game').textContent = '';
+  if (!id) return;
+  peTimer = setTimeout(async () => {
+    const name = await invoke('place_name', { placeId: id }).catch(() => null);
+    if (Number($('pe-place').value.trim()) === id) $('pe-game').textContent = name ? `🎮 ${name}` : T('No se encontró ese juego');
+  }, 400);
+}
+$('pe-place').oninput = peGame;
+
+$('pe-accs').addEventListener('click', (e) => {
+  const d = e.target.dataset;
+  if (d.pe) {
+    const id = Number(d.pe);
+    peOrder = e.target.checked ? [...peOrder, id] : peOrder.filter((x) => x !== id);
+  } else if (d.up || d.down) {
+    const id = Number(d.up || d.down);
+    const i = peOrder.indexOf(id);
+    const j = d.up ? i - 1 : i + 1;
+    [peOrder[i], peOrder[j]] = [peOrder[j], peOrder[i]];
+  } else return;
+  renderPeAccs();
+});
+$('pe-all').onclick = () => { peOrder = [...peOrder, ...orderedIds().filter((id) => !peOrder.includes(id))]; renderPeAccs(); };
+$('pe-none').onclick = () => { peOrder = []; renderPeAccs(); };
+
+$('pe-save').onclick = async () => {
+  const delay = $('pe-delay').value.trim();
+  const profile = {
+    id: peId,
+    name: $('pe-name').value,
+    userIds: peOrder,
+    placeId: Number($('pe-place').value.trim()) || 0,
+    jobId: $('pe-job').value,
+    delaySecs: delay === '' ? null : Math.max(0, Math.round(Number(delay))),
+  };
+  try {
+    await invoke('profile_save', { profile });
+    close('dlg-profile-edit');
+    toast('success', T('Perfil guardado'));
+    loadProfiles();
+  } catch (e) { $('pe-err').textContent = T(String(e)); }
+};
+
+$('btn-profiles').onclick = () => { renderProfiles(); open('dlg-profiles'); };
+$('prof-new').onclick = () => openProfileEditor(null);
+$('prof-list').addEventListener('click', async (e) => {
+  const d = e.target.dataset;
+  if (d.plaunch) { close('dlg-profiles'); launchProfile(Number(d.plaunch)); }
+  if (d.pedit) openProfileEditor(profiles.find((p) => p.id === Number(d.pedit)));
+  if (d.pdel) {
+    const p = profiles.find((x) => x.id === Number(d.pdel));
+    if (p && await confirmBox(T('¿Eliminar el perfil "{name}"? Las cuentas no se borran.', { name: p.name }))) {
+      await invoke('profile_delete', { id: p.id }).catch((err) => toast('error', T(String(err))));
+      loadProfiles();
+    }
+  }
+});
+$('prof-quick-go').onclick = () => launchProfile(Number($('prof-quick').value));
+listen('accounts', () => { if (!$('dlg-profiles').classList.contains('hidden')) renderProfiles(); });
+loadProfiles();
+
 // ───────────────────────── idioma
 
 $('lang-sel').value = LANG;
@@ -876,6 +1015,7 @@ $('lang-sel').onchange = (e) => {
   setLang(e.target.value);
   render();
   showMulti();
+  renderProfiles();
   const a = accTarget;
   accTarget = null;
   showAccount(a);

@@ -82,6 +82,7 @@
           <div class="r-row"><button id="btn-join" class="grow primary">Unirse al servidor</button><button id="btn-servers">Servidores</button></div>
           <div class="r-row"><span class="lbl">Usuario</span><input id="follow-user" class="grow"><button id="btn-follow">Seguir</button></div>
           <div id="progress" class="progress hidden"><span id="progress-text"></span><button id="btn-cancel">Cancelar</button></div>
+          <div class="r-row prof-quick"><span class="lbl">Perfil</span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">▶</button></div>
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
             <button id="btn-afk">Anti-AFK</button>
@@ -155,7 +156,7 @@
             <button class="tool" data-proxy="btn-add"><b>⇅</b><span>Importar / Exportar</span><small>Copias de cuentas</small></button>
             <button class="tool" data-proxy="btn-settings"><b>⚙</b><span>Ajustes</span><small>Multi Roblox, API</small></button>
             <button class="tool soon" disabled><b>👥</b><span>Grupos Roblox</span><small>Próximamente</small></button>
-            <button class="tool soon" disabled><b>⚡</b><span>Perfiles</span><small>Próximamente</small></button>
+            <button class="tool" id="btn-profiles"><b>⚡</b><span>Perfiles</span><small>Lanzar grupos de cuentas</small></button>
           </div>
         </div>
       </div>
@@ -216,6 +217,33 @@
         <table><thead><tr><th>Juego más jugado</th><th style="width:90px">Tiempo</th><th style="width:110px">Última vez</th></tr></thead><tbody id="st-games"></tbody></table>
       </div>
       <div id="utab-avatar" class="scroll upane hidden"><div id="avatar-host" class="avatar-host"></div><div id="avatar-msg" class="avatar-msg muted"></div></div>
+    </div>
+  </div>
+
+  <div id="dlg-profiles" class="overlay hidden">
+    <div class="card big">
+      <h2>Perfiles de lanzamiento <button class="close" data-close="dlg-profiles">✕</button></h2>
+      <div class="r-row"><span class="grow muted">Un perfil guarda qué cuentas abrir, en qué juego y con cuánto retraso.</span><button id="prof-new" class="primary">Nuevo perfil</button></div>
+      <div id="prof-list" class="scroll prof-list"></div>
+    </div>
+  </div>
+
+  <div id="dlg-profile-edit" class="overlay hidden">
+    <div class="card big">
+      <h2><span id="pe-title">Nuevo perfil</span> <button class="close" data-close="dlg-profile-edit">✕</button></h2>
+      <div class="pe-form">
+        <label>Nombre<input id="pe-name" placeholder="Ej.: Granja mañana"></label>
+        <div class="r-row">
+          <label class="grow">Place ID<input id="pe-place" inputmode="numeric"></label>
+          <label class="grow">Retraso entre cuentas (s)<input id="pe-delay" type="number" min="0" placeholder="Usar el de Ajustes"></label>
+        </div>
+        <label>Job ID o enlace de servidor privado (opcional)<input id="pe-job" placeholder="Vacío: servidor según los ajustes"></label>
+        <span id="pe-game" class="muted"></span>
+      </div>
+      <div class="r-row"><span class="grow">Cuentas, en orden de lanzamiento <span id="pe-count" class="muted"></span></span><button id="pe-all">Todas</button><button id="pe-none">Ninguna</button></div>
+      <div id="pe-accs" class="scroll pe-accs"></div>
+      <p id="pe-err" class="err"></p>
+      <div class="actions"><button data-close="dlg-profile-edit">Cancelar</button><button id="pe-save" class="primary">Guardar</button></div>
     </div>
   </div>
 
