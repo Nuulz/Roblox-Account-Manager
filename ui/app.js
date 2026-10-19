@@ -786,7 +786,7 @@ function paintInfo(i) {
   } catch { email = '?'; }
   $('acc-robux').textContent = i.robux ?? '?';
   $('acc-email').textContent = email;
-  $('acc-pin').textContent = T(!i.pinEnabled ? 'no' : i.pinUnlockedUntil > 0 ? 'abierto' : 'activo');
+  $('acc-pin').textContent = i.pinEnabled == null ? '?' : T(!i.pinEnabled ? 'no' : i.pinUnlockedUntil > 0 ? 'abierto' : 'activo');
 }
 
 async function loadAccInfo(force = false) {

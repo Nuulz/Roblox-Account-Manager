@@ -102,7 +102,11 @@ async fn account_util(user_id: i64, action: String, args: serde_json::Value) -> 
         "info" => {
             let (robux, email, pin) =
                 tokio::join!(api.robux(&cookie, user_id), api.email_info(&cookie), api.pin_status(&cookie));
-            let (pin_on, pin_until) = pin.unwrap_or((false, 0));
+            // Si no se pudo leer el PIN (cookie vencida, límite…) se envía null para no mostrar "no".
+            let (pin_on, pin_until) = match pin {
+                Ok((on, until)) => (json!(on), json!(until)),
+                Err(_) => (serde_json::Value::Null, serde_json::Value::Null),
+            };
             Ok(json!({ "robux": robux, "email": email, "pinEnabled": pin_on, "pinUnlockedUntil": pin_until }))
         }
         "avatar3d" => api.avatar_3d(&cookie, user_id).await.map_err(ops::err),
