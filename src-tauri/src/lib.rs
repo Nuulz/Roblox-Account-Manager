@@ -641,6 +641,7 @@ pub fn run() {
             tauri::async_runtime::spawn(ops::session_loop());
             tauri::async_runtime::spawn(ops::cookie_refresh_loop());
             tauri::async_runtime::spawn(ops::anti_afk_loop());
+            tauri::async_runtime::spawn(ops::auto_rejoin_loop());
             tauri::async_runtime::spawn(stats::stats_loop());
 
             Ok(())

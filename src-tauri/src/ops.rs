@@ -131,6 +131,7 @@ pub fn build_launch_url(ticket: &str, tracker: &str, req: &JoinRequest, access_c
 
 /// Une una cuenta a un juego / servidor / usuario.
 pub async fn join_server(user_id: i64, mut req: JoinRequest) -> CmdResult<()> {
+    let original = req.clone();
     let (cookie, tracker, username) = st()
         .with_account(user_id, |a| (a.security_token.clone(), a.ensure_tracker_id(), a.username.clone()))
         .ok_or("Cuenta no encontrada")?;
@@ -198,6 +199,12 @@ pub async fn join_server(user_id: i64, mut req: JoinRequest) -> CmdResult<()> {
     let launched = tokio::task::spawn_blocking(move || process::shell_launch_and_wait(&url)).await.map_err(err)?;
     next_account();
     launched?;
+    st().with_account(user_id, |a| {
+        a.rt.last_join = Some(original);
+        a.rt.seen_in_game = false;
+        a.rt.rejoin_misses = 0;
+        a.rt.off_game_since = None;
+    });
     tokio::spawn(adjust_window_position(user_id));
     Ok(())
 }
@@ -292,6 +299,7 @@ pub async fn update_presence(ids: Vec<i64>) {
         for p in list {
             if let Some(a) = accounts.iter_mut().find(|a| a.user_id == p.user_id) {
                 if p.in_game() {
+                    a.rt.seen_in_game = true;
                     if a.rt.game_session_start.is_none() {
                         a.rt.game_session_start = Some(session_start_for(a, &procs));
                     }
@@ -465,4 +473,91 @@ fn tick_anti_afk() {
         storage::save();
         st().emit_accounts();
     }
+}
+
+// ---------------------------------------------------------------- auto-rejoin
+
+/// Si el Roblox de una cuenta marcada se cierra o queda fuera del juego, vuelve a entrar
+/// al mismo juego/servidor del último lanzamiento.
+pub async fn auto_rejoin_loop() {
+    loop {
+        tokio::time::sleep(Duration::from_secs(20)).await;
+        if !st().is_unlocked() || st().launching.load(Ordering::SeqCst) {
+            continue;
+        }
+        for (id, req) in rejoin_due().await {
+            let name = st().with_account(id, |a| a.username.clone()).unwrap_or_default();
+            st().toast("info", format!("{name}: Roblox se cerró, volviendo a entrar"));
+            if let Err(e) = join_server(id, req).await {
+                st().toast("error", e);
+            }
+            let delay = st().settings.read().general.account_join_delay.max(3);
+            tokio::time::sleep(Duration::from_secs(delay)).await;
+        }
+    }
+}
+
+async fn rejoin_due() -> Vec<(i64, JoinRequest)> {
+    let procs = tokio::task::spawn_blocking(process::roblox_processes).await.unwrap_or_default();
+    let max_per_hour = st().settings.read().general.auto_rejoin_max_per_hour.max(1) as usize;
+    let now = Local::now();
+    let mut due = Vec::new();
+    let mut changed = false;
+    for a in st().accounts.write().iter_mut().filter(|a| a.auto_rejoin) {
+        let Some(req) = a.rt.last_join.clone() else { continue };
+        let running: Vec<_> = procs
+            .iter()
+            .filter(|p| !a.browser_tracker_id.is_empty() && p.tracker_id == a.browser_tracker_id)
+            .collect();
+
+        // Proceso abierto pero la presencia dice que no está en un juego (desconectado / expulsado).
+        let stuck = if running.is_empty() {
+            false
+        } else {
+            // Solo si ya lo vimos en juego: así una presencia oculta no cierra un Roblox que funciona.
+            let off = a.rt.seen_in_game
+                && a.rt.presence.as_ref().is_some_and(|p| !p.in_game())
+                && a.rt.game_session_start.is_none()
+                && (now - a.last_use).num_minutes() >= 3;
+            if off {
+                let since = *a.rt.off_game_since.get_or_insert(now);
+                (now - since).num_minutes() >= 3
+            } else {
+                a.rt.off_game_since = None;
+                false
+            }
+        };
+
+        if !running.is_empty() && !stuck {
+            a.rt.rejoin_misses = 0;
+            continue;
+        }
+        // Dos revisiones seguidas sin proceso, para no confundir un cierre con el arranque.
+        a.rt.rejoin_misses += 1;
+        if running.is_empty() && a.rt.rejoin_misses < 2 {
+            continue;
+        }
+        a.rt.rejoin_misses = 0;
+        a.rt.off_game_since = None;
+        a.rt.rejoins.retain(|t| (now - *t).num_minutes() < 60);
+        if a.rt.rejoins.len() >= max_per_hour {
+            a.auto_rejoin = false;
+            a.rt.rejoins.clear();
+            changed = true;
+            st().toast("error", format!("{}: auto-rejoin desactivado, se cerró {max_per_hour} veces en una hora", a.username));
+            continue;
+        }
+        a.rt.rejoins.push(now);
+        if stuck {
+            for p in &running {
+                process::kill(p.pid);
+            }
+        }
+        due.push((a.user_id, req));
+    }
+    if changed {
+        storage::save();
+        st().emit_accounts();
+    }
+    due
 }

@@ -149,7 +149,7 @@ function render() {
     <tr class="grp" data-group="${esc(g)}"><td colspan="3"><div class="gline">${esc(g)} <span class="n">(${list.length})</span><span class="caret">${collapsed.has(g) ? '▼' : '▲'}</span></div></td></tr>
     ${collapsed.has(g) ? '' : list.map((a) => `
     <tr class="acc ${selected.has(a.userId) ? 'sel' : ''}" data-id="${a.userId}">
-      <td title="${esc(dotTitle(a))}"><span class="cell"><span class="dot ${dotClass(a)}"></span>${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>'}<span class="nm">${hide ? '••••••••' : esc(a.username)}</span>${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}${noticeTag(a)}</span></td>
+      <td title="${esc(dotTitle(a))}"><span class="cell"><span class="dot ${dotClass(a)}"></span>${a.avatarUrl ? `<img class="av" src="${esc(a.avatarUrl)}" alt="">` : '<span class="av"></span>'}<span class="nm">${hide ? '••••••••' : esc(a.username)}</span>${timer(a)}${a.antiAfk ? '<span class="afk">AFK</span>' : ''}${a.autoRejoin ? '<span class="afk">RJ</span>' : ''}${noticeTag(a)}</span></td>
       <td>${esc(a.alias)}</td>
       <td title="${esc(a.description)}">${esc(a.description)}</td>
     </tr>`).join('')}`).join('');
@@ -237,6 +237,7 @@ $('ctx').addEventListener('click', (e) => {
   else if (act === 'group') openGroup();
   else if (act === 'util') openUtil();
   else if (act === 'afk') toggleAfk();
+  else if (act === 'rejoin') toggleRejoin();
   else if (act === 'remove') removeSelected();
 });
 
@@ -279,6 +280,15 @@ async function toggleAfk() {
   toast('success', T(on ? 'Anti-AFK activado en {n} cuenta(s)' : 'Anti-AFK desactivado en {n} cuenta(s)', { n: sel.length }));
 }
 $('btn-afk').onclick = toggleAfk;
+
+async function toggleRejoin() {
+  const sel = selectedAccounts();
+  if (!sel.length) return toast('error', T('Selecciona al menos una cuenta'));
+  const on = !sel.every((a) => a.autoRejoin);
+  for (const a of sel) await update({ userId: a.userId, autoRejoin: on });
+  toast('success', T(on ? 'Auto-rejoin activado en {n} cuenta(s)' : 'Auto-rejoin desactivado en {n} cuenta(s)', { n: sel.length }));
+}
+$('btn-rejoin').onclick = toggleRejoin;
 
 function openGroup() {
   if (!selected.size) return toast('error', T('Selecciona al menos una cuenta'));

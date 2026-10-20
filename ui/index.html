@@ -86,6 +86,7 @@
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
             <button id="btn-afk">Anti-AFK <span class="help" tabindex="0" data-help="AFK significa &quot;lejos del teclado&quot;. Roblox expulsa a quien pasa unos 20 minutos sin moverse. El anti-AFK pulsa de vez en cuando espacio o W/A/D en las ventanas de Roblox de las cuentas marcadas.">?</span></button>
+            <button id="btn-rejoin" class="span2">Auto-rejoin <span class="help" tabindex="0" data-help="Si el Roblox de una cuenta marcada se cierra, se cae o queda desconectado, la app la vuelve a meter al mismo juego y servidor del último lanzamiento. Si se cierra demasiadas veces en una hora, se apaga solo.">?</span></button>
             <button id="btn-find" class="span2">Buscar juego</button>
           </div>
         </div>
@@ -426,6 +427,7 @@
           <label class="row"><input type="checkbox" data-k="showPresence"> Mostrar estado, cada <input type="number" data-k="presenceUpdateMinutes" min="1" class="num"> min <span class="help" tabindex="0" data-help="Muestra el punto de color de cada cuenta (en línea, en juego, en Studio) y lo actualiza cada tantos minutos.">?</span></label>
           <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar <span class="help" tabindex="0" data-help="Las cookies de cuentas que no usas en más de 20 días se renuevan solas (como mucho una vez por semana) para que no caduquen.">?</span></label>
           <label class="row">Anti-AFK entre <input type="number" data-k="antiAfkMinMinutes" min="1" class="num"> y <input type="number" data-k="antiAfkMaxMinutes" min="1" class="num"> min <span class="help" tabindex="0" data-help="Cada cuánto actúa el anti-AFK: elige un tiempo al azar entre estos dos valores.">?</span></label>
+          <label class="row">Auto-rejoin: máximo <input type="number" data-k="autoRejoinMaxPerHour" min="1" class="num"> por hora <span class="help" tabindex="0" data-help="Si una cuenta se cierra más veces que esto en una hora, el auto-rejoin se desactiva para no quedar en un bucle.">?</span></label>
           <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
         </fieldset>
         <fieldset><legend>Servidor web local (para tus scripts) <span class="help" tabindex="0" data-help="Permite que tus propios programas o scripts controlen la app a través de http://localhost. Si no lo usas, déjalo apagado.">?</span></legend>
@@ -462,6 +464,7 @@
     <li data-act="util">Estadísticas y avatar 3D…</li>
     <li data-act="group">Mover a grupo…</li>
     <li data-act="afk">Activar/desactivar anti-AFK</li>
+    <li data-act="rejoin">Activar/desactivar auto-rejoin</li>
     <li class="sep"></li>
     <li data-act="remove">Eliminar</li>
   </ul>

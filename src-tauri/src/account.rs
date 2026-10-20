@@ -22,6 +22,7 @@ pub struct Account {
     pub added: DateTime<Local>,
     pub browser_tracker_id: String,
     pub anti_afk: bool,
+    pub auto_rejoin: bool,
     pub valid: bool,
 
     #[serde(skip)]
@@ -36,6 +37,12 @@ pub struct Runtime {
     pub presence: Option<Presence>,
     pub game_session_start: Option<DateTime<Local>>,
     pub anti_afk_misses: u8,
+    /// Último lanzamiento, para volver a entrar si Roblox se cierra.
+    pub last_join: Option<crate::ops::JoinRequest>,
+    pub rejoin_misses: u8,
+    pub seen_in_game: bool,
+    pub off_game_since: Option<DateTime<Local>>,
+    pub rejoins: Vec<DateTime<Local>>,
     pub avatar_url: Option<String>,
 }
 
@@ -57,6 +64,7 @@ impl Default for Account {
             added: Local::now(),
             browser_tracker_id: String::new(),
             anti_afk: false,
+            auto_rejoin: false,
             valid: true,
             rt: Runtime::default(),
         }
@@ -90,6 +98,7 @@ impl Account {
             last_use: self.last_use.to_rfc3339(),
             added: self.added.to_rfc3339(),
             anti_afk: self.anti_afk,
+            auto_rejoin: self.auto_rejoin,
             needs_login: self.rt.needs_login,
             valid: self.valid,
             presence_type: p.map(|p| p.user_presence_type).unwrap_or(-1),
@@ -120,6 +129,7 @@ pub struct AccountView {
     pub last_use: String,
     pub added: String,
     pub anti_afk: bool,
+    pub auto_rejoin: bool,
     pub needs_login: bool,
     pub valid: bool,
     pub presence_type: i32,
@@ -144,12 +154,13 @@ pub struct AccountPatch {
     pub group: Option<String>,
     pub password: Option<String>,
     pub anti_afk: Option<bool>,
+    pub auto_rejoin: Option<bool>,
     pub fields: Option<BTreeMap<String, String>>,
 }
 
 impl Default for AccountPatch {
     fn default() -> Self {
-        Self { user_id: 0, alias: None, description: None, group: None, password: None, anti_afk: None, fields: None }
+        Self { user_id: 0, alias: None, description: None, group: None, password: None, anti_afk: None, auto_rejoin: None, fields: None }
     }
 }
 
@@ -160,6 +171,12 @@ impl AccountPatch {
         if let Some(v) = self.group { a.group = v; }
         if let Some(v) = self.password { a.password = v; }
         if let Some(v) = self.anti_afk { a.anti_afk = v; }
+        if let Some(v) = self.auto_rejoin {
+            a.auto_rejoin = v;
+            a.rt.rejoin_misses = 0;
+            a.rt.off_game_since = None;
+            a.rt.rejoins.clear();
+        }
         if let Some(v) = self.fields { a.fields = v; }
     }
 }
