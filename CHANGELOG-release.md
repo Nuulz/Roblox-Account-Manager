@@ -1,10 +1,8 @@
-### Novedades de la 4.1
-- **Inventario y limiteds:** ya no se queda con "datos incompletos". Lee el inventario con la sesión de cada cuenta y espera y reintenta cuando Roblox limita las peticiones.
-- **Multi Roblox:** si hay un Roblox abierto que lo bloquea, la app ofrece cerrarlo y activarlo. Pulsa "(bloqueado)" o guarda los ajustes.
-- **Ajustes:** ya se guardan aunque Multi Roblox no se pueda activar.
-- **ram.log:** cada línea lleva la fecha, la hora local y el desfase UTC (por ejemplo `2026-10-19 19:59:15 UTC-03:00`).
-- El Place ID, el Job ID y el usuario a seguir se recuerdan entre sesiones (también los de la 3.x).
-- Español por defecto, "1 aviso" en singular, el contador de amigos en línea incluye a los que están en juego y los servidores sin ping muestran "—".
+### Novedades de la 4.2
+- **Auto-rejoin:** marca cuentas con el botón Auto-rejoin (o clic derecho). Si su Roblox se cierra, se cae o queda desconectado, la app la vuelve a meter al mismo juego y servidor. En la lista aparece la etiqueta **RJ**.
+- Si una cuenta se cierra demasiadas veces en una hora (5 por defecto, se cambia en Ajustes → Cuentas), el auto-rejoin se apaga solo para no quedar en bucle.
+- Ojo: si cierras a mano una ventana de una cuenta con RJ, se vuelve a abrir. Apágale el auto-rejoin antes.
+- Arreglado: los campos con atajo Enter (buscar juego, usuarios, servidores, alias) no dejaban escribir.
 
 ### Descargas
 - **Portable.zip:** descomprime en una carpeta y abre `Roblox Account Manager.exe`. Tus datos se guardan en esa misma carpeta.
