@@ -42,6 +42,9 @@ function toast(kind, message) {
 
 const open = (id) => $(id).classList.remove('hidden');
 const close = (id) => $(id).classList.add('hidden');
+// Ejecuta fn al pulsar Enter. Ojo: un "onkeydown = (e) => cond && fn()" devuelve false
+// con el resto de teclas y eso cancela la escritura en el campo.
+const onEnter = (el, fn) => el.addEventListener('keydown', (e) => { if (e.key === 'Enter') fn(); });
 document.addEventListener('click', (e) => { const c = e.target.dataset?.close; if (c) close(c); });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') document.querySelectorAll('.overlay:not(#vault)').forEach((o) => o.classList.add('hidden'));
@@ -89,8 +92,8 @@ $('setup-ok').onclick = () => {
 };
 document.querySelectorAll('input[name=mode]').forEach((r) =>
   r.addEventListener('change', () => $('setup-pass').classList.toggle('hidden', r.value !== 'password' || !r.checked)));
-$('vault-pass').onkeydown = (e) => e.key === 'Enter' && $('vault-unlock').click();
-$('legacy-pass').onkeydown = (e) => e.key === 'Enter' && $('legacy-unlock').click();
+onEnter($('vault-pass'), () => $('vault-unlock').click());
+onEnter($('legacy-pass'), () => $('legacy-unlock').click());
 
 // ───────────────────────── ajustes
 
@@ -265,7 +268,7 @@ function needOne() {
 }
 
 $('btn-alias').onclick = () => { const a = needOne(); if (a) update({ userId: a.userId, alias: $('alias').value.trim() }); };
-$('alias').onkeydown = (e) => e.key === 'Enter' && $('btn-alias').click();
+onEnter($('alias'), () => $('btn-alias').click());
 $('btn-desc').onclick = () => { const a = needOne(); if (a) update({ userId: a.userId, description: $('desc').value }).then(() => toast('success', T('Descripción guardada'))); };
 
 async function toggleAfk() {
@@ -290,7 +293,7 @@ $('group-ok').onclick = async () => {
   for (const a of selectedAccounts()) await update({ userId: a.userId, group });
   close('dlg-group');
 };
-$('group-name').onkeydown = (e) => e.key === 'Enter' && $('group-ok').click();
+onEnter($('group-name'), () => $('group-ok').click());
 
 async function removeSelected() {
   const sel = selectedAccounts();
@@ -391,7 +394,7 @@ $('btn-follow').onclick = async () => {
     launch(ids, { placeId: userId, jobId: '', followUser: true, joinVip: false });
   } catch (e) { toast('error', T('No se encontró {name}: {err}', { name, err: e })); }
 };
-$('follow-user').onkeydown = (e) => e.key === 'Enter' && $('btn-follow').click();
+onEnter($('follow-user'), () => $('btn-follow').click());
 $('btn-cancel').onclick = () => invoke('launch_cancel');
 
 $('btn-shuffle').onclick = () => saveSettings((s) => { s.general.shuffleJobId = !s.general.shuffleJobId; }).then(syncToggles);
@@ -494,7 +497,7 @@ async function loadServers(more) {
 $('btn-servers').onclick = () => { open('dlg-servers'); $('srv-place').value ||= $('place-id').value; $('srv-place').focus(); };
 $('srv-load').onclick = () => loadServers(false);
 $('srv-more').onclick = () => loadServers(true);
-$('srv-place').onkeydown = (e) => e.key === 'Enter' && loadServers(false);
+onEnter($('srv-place'), () => loadServers(false));
 async function loadRegion(jobId) {
   const cell = document.querySelector(`[data-region="${CSS.escape(jobId)}"]`);
   if (!cell || cell.dataset.done) return;
@@ -1218,7 +1221,7 @@ $('btn-find').onclick = async () => {
 };
 $('find-go').onclick = () => findGames(false);
 $('find-more').onclick = () => findGames(true);
-$('find-q').onkeydown = (e) => e.key === 'Enter' && findGames(false);
+onEnter($('find-q'), () => findGames(false));
 $('find-nospons').onchange = () => findTerm && findGames(false);
 $('find-list').addEventListener('click', async (e) => {
   const d = e.target.dataset;
@@ -1305,7 +1308,8 @@ $('vip-save').onclick = async () => {
   } catch (e) { $('vip-err').textContent = T(String(e)); }
   finally { $('vip-save').disabled = false; }
 };
-$('vip-link').onkeydown = $('vip-name').onkeydown = (e) => e.key === 'Enter' && $('vip-save').click();
+onEnter($('vip-link'), () => $('vip-save').click());
+onEnter($('vip-name'), () => $('vip-save').click());
 
 $('vip-list').addEventListener('click', async (e) => {
   const d = e.target.dataset;
@@ -1482,7 +1486,7 @@ $('btn-avcopy').onclick = () => {
 };
 $('av-src-acc').onchange = () => { if ($('av-src-acc').value) { $('av-src-user').value = ''; loadAvatarSource(); } };
 $('av-src-user').oninput = () => { if ($('av-src-user').value) $('av-src-acc').value = ''; };
-$('av-src-user').onkeydown = (e) => e.key === 'Enter' && loadAvatarSource();
+onEnter($('av-src-user'), () => loadAvatarSource());
 $('av-load').onclick = loadAvatarSource;
 $('av-apply').onclick = async () => {
   const targets = orderedIds().filter((id) => selected.has(id) && id !== avSource);
@@ -1637,7 +1641,7 @@ function renderUsers() {
 
 $('btn-users').onclick = () => { usSelText(); open('dlg-users'); $('us-q').focus(); };
 $('us-go').onclick = searchUsers;
-$('us-q').onkeydown = (e) => e.key === 'Enter' && searchUsers();
+onEnter($('us-q'), () => searchUsers());
 $('us-list').addEventListener('click', async (e) => {
   const d = e.target.closest('[data-pgame]')?.dataset ?? e.target.dataset;
   if (d.pgame !== undefined && !d.pgame) return;
