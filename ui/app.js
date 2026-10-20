@@ -1,4 +1,11 @@
 const { invoke } = window.__TAURI__.core;
+
+// En Linux Roblox corre en Sober: se ocultan las opciones que solo existen en Windows.
+invoke('app_platform').then((os) => {
+  if (os === 'windows') return;
+  document.body.classList.add('linux');
+  document.querySelector('input[name="mode"][value="password"]').checked = true;
+});
 const { listen } = window.__TAURI__.event;
 const appWin = window.__TAURI__.window.getCurrentWindow();
 const $ = (id) => document.getElementById(id);

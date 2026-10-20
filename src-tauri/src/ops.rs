@@ -188,7 +188,19 @@ pub async fn join_server(user_id: i64, mut req: JoinRequest) -> CmdResult<()> {
         }
     }
 
-    let url = build_launch_url(&ticket, &tracker, &req, &access_code, &link_code, teleport);
+    // En Linux Sober entra con un enlace roblox://; para seguir a alguien se busca dónde está.
+    #[cfg(target_os = "linux")]
+    if req.follow_user {
+        let p = api()
+            .presence(&[req.place_id], Some(&cookie))
+            .await
+            .ok()
+            .and_then(|l| l.into_iter().next())
+            .filter(|p| p.in_game() && p.place_id.is_some())
+            .ok_or("Ese usuario no está en un juego, o su privacidad no deja seguirlo")?;
+        req = JoinRequest { place_id: p.place_id.unwrap_or_default(), job_id: p.game_id.unwrap_or_default(), ..Default::default() };
+    }
+
     st().with_account(user_id, |a| a.last_use = Local::now());
     storage::save();
 
@@ -196,7 +208,18 @@ pub async fn join_server(user_id: i64, mut req: JoinRequest) -> CmdResult<()> {
         tokio::spawn(games::add_recent(req.place_id));
     }
 
-    let launched = tokio::task::spawn_blocking(move || process::shell_launch_and_wait(&url)).await.map_err(err)?;
+    #[cfg(windows)]
+    let launched = {
+        let url = build_launch_url(&ticket, &tracker, &req, &access_code, &link_code, teleport);
+        tokio::task::spawn_blocking(move || process::shell_launch_and_wait(&url)).await.map_err(err)?
+    };
+    #[cfg(target_os = "linux")]
+    let launched = {
+        let _ = (&ticket, teleport);
+        let uri = crate::sober::join_uri(req.place_id, if req.join_vip { "" } else { &req.job_id }, if req.join_vip { &access_code } else { "" }, &link_code);
+        let tracker = tracker.clone();
+        tokio::task::spawn_blocking(move || crate::sober::launch(&tracker, &cookie, &uri)).await.map_err(err)?
+    };
     next_account();
     launched?;
     st().with_account(user_id, |a| {
@@ -435,6 +458,9 @@ pub async fn anti_afk_loop() {
 }
 
 fn tick_anti_afk() {
+    if cfg!(not(windows)) {
+        return;
+    }
     use rand::seq::SliceRandom;
     let sequences: [&[u32]; 5] = [&[VK_SPACE], &[VK_W, VK_SPACE], &[VK_A, VK_SPACE], &[VK_D, VK_SPACE], &[VK_W]];
     let targets: Vec<(i64, String)> = st()

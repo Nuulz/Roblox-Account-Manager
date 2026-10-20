@@ -9,11 +9,14 @@ mod groups;
 mod inventory;
 mod health;
 mod ops;
+#[cfg_attr(not(windows), path = "process_linux.rs")]
 mod process;
 mod profiles;
 mod regions;
 mod roblox;
 mod settings;
+#[cfg(target_os = "linux")]
+mod sober;
 mod stats;
 mod state;
 mod storage;
@@ -416,6 +419,11 @@ fn app_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
+#[tauri::command]
+fn app_platform() -> &'static str {
+    std::env::consts::OS
+}
+
 // ─────────────────────────────────── almacenamiento
 
 #[tauri::command]
@@ -691,6 +699,7 @@ pub fn run() {
             update_check,
             update_install,
             app_version,
+            app_platform,
             // almacenamiento
             storage_export,
             storage_import,

@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::state::st;
 
 /// Carpeta de la versión instalada de Roblox (la que tenga RobloxPlayerBeta.exe).
+#[cfg(windows)]
 pub fn roblox_version_folder() -> Option<PathBuf> {
     use windows::Win32::System::Registry::{RegGetValueW, HKEY_CLASSES_ROOT, RRF_RT_REG_SZ};
     // 1) La que registra el protocolo roblox-player
@@ -44,6 +45,12 @@ pub fn roblox_version_folder() -> Option<PathBuf> {
         }
     }
     best.map(|(_, p)| p)
+}
+
+/// En Linux Sober guarda las versiones por su cuenta; ver `sober::launch`.
+#[cfg(not(windows))]
+pub fn roblox_version_folder() -> Option<PathBuf> {
+    None
 }
 
 pub fn patch() {

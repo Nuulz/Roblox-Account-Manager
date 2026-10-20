@@ -23,7 +23,7 @@
       </div>
       <div id="vault-setup" class="hidden">
         <p id="setup-msg">Elige cómo proteger tus cuentas.</p>
-        <label class="row"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI) <span class="help" tabindex="0" data-help="Cifra tus cuentas con tu usuario de Windows. No tienes que escribir ninguna contraseña, pero el archivo solo se puede abrir en este PC y con este usuario de Windows.">?</span></label>
+        <label class="row win-only"><input type="radio" name="mode" value="windows" checked> Cuenta de Windows (DPAPI) <span class="help" tabindex="0" data-help="Cifra tus cuentas con tu usuario de Windows. No tienes que escribir ninguna contraseña, pero el archivo solo se puede abrir en este PC y con este usuario de Windows.">?</span></label>
         <label class="row"><input type="radio" name="mode" value="password"> Contraseña maestra</label>
         <label class="row"><input type="radio" name="mode" value="plain"> Sin cifrar</label>
         <input id="setup-pass" type="password" placeholder="Contraseña maestra" class="hidden">
@@ -53,7 +53,7 @@
           <button id="btn-add">Agregar cuenta ▾</button>
           <button id="btn-remove">Eliminar</button>
           <label class="row"><input type="checkbox" id="hide-names"> Ocultar usuarios</label>
-          <label class="row" id="multi-label"><input type="checkbox" id="multi-chk"> Multi Roblox <span id="multi" class="multi-state"></span> <span class="help" tabindex="0" data-help="Permite tener varias ventanas de Roblox abiertas a la vez, una por cuenta. Cierra Roblox antes de activarlo.">?</span></label>
+          <label class="row win-only" id="multi-label"><input type="checkbox" id="multi-chk"> Multi Roblox <span id="multi" class="multi-state"></span> <span class="help" tabindex="0" data-help="Permite tener varias ventanas de Roblox abiertas a la vez, una por cuenta. Cierra Roblox antes de activarlo.">?</span></label>
           <input id="search" placeholder="Buscar…">
         </div>
       </div>
@@ -85,7 +85,7 @@
           <div class="r-row prof-quick"><span class="lbl">Perfil <span class="help" tabindex="0" data-help="Un perfil de lanzamiento guarda un grupo de cuentas, un juego y un retraso, para abrirlos todos con un clic. Se crean en Herramientas &gt; Perfiles.">?</span></span><select id="prof-quick" class="grow"></select><button id="prof-quick-go" title="Lanzar el perfil">Lanzar</button></div>
           <div class="r-grid">
             <button id="btn-games">Juegos recientes</button>
-            <button id="btn-afk">Anti-AFK <span class="help" tabindex="0" data-help="AFK significa &quot;lejos del teclado&quot;. Roblox expulsa a quien pasa unos 20 minutos sin moverse. El anti-AFK pulsa de vez en cuando espacio o W/A/D en las ventanas de Roblox de las cuentas marcadas.">?</span></button>
+            <button id="btn-afk" class="win-only">Anti-AFK <span class="help" tabindex="0" data-help="AFK significa &quot;lejos del teclado&quot;. Roblox expulsa a quien pasa unos 20 minutos sin moverse. El anti-AFK pulsa de vez en cuando espacio o W/A/D en las ventanas de Roblox de las cuentas marcadas.">?</span></button>
             <button id="btn-rejoin" class="span2">Auto-rejoin <span class="help" tabindex="0" data-help="Si el Roblox de una cuenta marcada se cierra, se cae o queda desconectado, la app la vuelve a meter al mismo juego y servidor del último lanzamiento. Si se cierra demasiadas veces en una hora, se apaga solo.">?</span></button>
             <button id="btn-find" class="span2">Buscar juego</button>
           </div>
@@ -410,8 +410,8 @@
       <h2>Ajustes <button class="close" data-close="dlg-settings">✕</button></h2>
       <div class="scroll settings">
         <fieldset><legend>Roblox</legend>
-          <label class="row"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox</label>
-          <label class="row"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773) <span class="help" tabindex="0" data-help="Evita que varias ventanas de Roblox mezclen sus sesiones al teletransportarse entre lugares de un juego, que es lo que provoca el error 773.">?</span></label>
+          <label class="row win-only"><input type="checkbox" data-k="enableMultiRoblox"> Multi Roblox</label>
+          <label class="row win-only"><input type="checkbox" data-k="lockRobloxCookies"> Bloquear RobloxCookies.dat (evita el error 773) <span class="help" tabindex="0" data-help="Evita que varias ventanas de Roblox mezclen sus sesiones al teletransportarse entre lugares de un juego, que es lo que provoca el error 773.">?</span></label>
           <label class="row"><input type="checkbox" data-k="autoCloseLastProcess"> Cerrar el Roblox anterior de la cuenta al lanzar</label>
           <label class="row"><input type="checkbox" data-k="unlockFps"> Desbloquear FPS, máximo <input type="number" data-k="maxFps" min="30" class="num"> <span class="help" tabindex="0" data-help="Roblox limita los FPS a 60. Esto sube el límite al número que pongas. Más FPS usa más CPU y GPU.">?</span></label>
         </fieldset>
@@ -428,7 +428,7 @@
           <label class="row"><input type="checkbox" data-k="autoCookieRefresh"> Renovar cookies de cuentas sin usar <span class="help" tabindex="0" data-help="Las cookies de cuentas que no usas en más de 20 días se renuevan solas (como mucho una vez por semana) para que no caduquen.">?</span></label>
           <label class="row">Anti-AFK entre <input type="number" data-k="antiAfkMinMinutes" min="1" class="num"> y <input type="number" data-k="antiAfkMaxMinutes" min="1" class="num"> min <span class="help" tabindex="0" data-help="Cada cuánto actúa el anti-AFK: elige un tiempo al azar entre estos dos valores.">?</span></label>
           <label class="row">Auto-rejoin: máximo <input type="number" data-k="autoRejoinMaxPerHour" min="1" class="num"> por hora <span class="help" tabindex="0" data-help="Si una cuenta se cierra más veces que esto en una hora, el auto-rejoin se desactiva para no quedar en un bucle.">?</span></label>
-          <label class="row"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
+          <label class="row win-only"><input type="checkbox" data-w="saveWindowPositions"> Recordar posición de las ventanas de Roblox</label>
         </fieldset>
         <fieldset><legend>Servidor web local (para tus scripts) <span class="help" tabindex="0" data-help="Permite que tus propios programas o scripts controlen la app a través de http://localhost. Si no lo usas, déjalo apagado.">?</span></legend>
           <label class="row"><input type="checkbox" data-ws="enabled"> Activar en el puerto <input type="number" data-ws="port" min="1" max="65535" class="num" style="width:70px"></label>
@@ -463,7 +463,7 @@
     <li class="sep"></li>
     <li data-act="util">Estadísticas y avatar 3D…</li>
     <li data-act="group">Mover a grupo…</li>
-    <li data-act="afk">Activar/desactivar anti-AFK</li>
+    <li data-act="afk" class="win-only">Activar/desactivar anti-AFK</li>
     <li data-act="rejoin">Activar/desactivar auto-rejoin</li>
     <li class="sep"></li>
     <li data-act="remove">Eliminar</li>

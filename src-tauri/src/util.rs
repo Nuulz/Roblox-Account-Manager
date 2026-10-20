@@ -4,6 +4,19 @@ use md5::{Digest, Md5};
 use once_cell::sync::Lazy;
 
 /// Carpeta del ejecutable. La app es portable: todos los datos viven junto al .exe.
+/// En Linux, ~/.local/share/roblox-account-manager.
+#[cfg(not(windows))]
+pub static APP_DIR: Lazy<PathBuf> = Lazy::new(|| {
+    let base = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
+        .unwrap_or_else(|| PathBuf::from("."));
+    let dir = base.join("roblox-account-manager");
+    let _ = std::fs::create_dir_all(&dir);
+    dir
+});
+
+#[cfg(windows)]
 pub static APP_DIR: Lazy<PathBuf> = Lazy::new(|| {
     std::env::current_exe()
         .ok()
@@ -79,6 +92,11 @@ pub fn is_connected_to_internet() -> bool {
     use windows::Win32::Networking::WinInet::{InternetGetConnectedState, INTERNET_CONNECTION};
     let mut flags = INTERNET_CONNECTION(0);
     unsafe { InternetGetConnectedState(&mut flags, None).is_ok() }
+}
+
+#[cfg(not(windows))]
+pub fn is_connected_to_internet() -> bool {
+    true
 }
 
 /// Filtra el nombre de un juego igual que antes: sin etiquetas [..] ni símbolos raros.

@@ -177,6 +177,16 @@ pub fn legacy_open_password(data: &[u8], password: &str) -> Result<Vec<u8>, Stri
     Err("Contraseña incorrecta".into())
 }
 
+#[cfg(not(windows))]
+fn dpapi_protect(_data: &[u8], _entropy: &[u8]) -> Result<Vec<u8>, String> {
+    Err("El cifrado con la cuenta de Windows solo existe en Windows".into())
+}
+
+#[cfg(not(windows))]
+fn dpapi_unprotect(_data: &[u8], _entropy: Option<&[u8]>) -> Result<Vec<u8>, String> {
+    Err("El cifrado con la cuenta de Windows solo existe en Windows".into())
+}
+
 // ---------------------------------------------------------------------------------------------
 // DPAPI
 // ---------------------------------------------------------------------------------------------
